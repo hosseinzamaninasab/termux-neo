@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 source src/utils.sh
+source src/dashboard.sh
 
 ui_init
 ui_title "TERMUX NEO"

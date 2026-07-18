@@ -50,77 +50,18 @@ ui_add_status() {
     UI_STATUS+=("$1")
 }
 
-# ----------------------------------------------------------
-# Render Dashboard
-# ----------------------------------------------------------
 
 # ----------------------------------------------------------
-# Render Top Border
+# UI Borders
 # ----------------------------------------------------------
 
-ui_render_top() {
-    echo "╔$(printf '═%.0s' $(seq 1 "$UI_WIDTH"))╗"
-}
+UI_BORDER_HORIZONTAL="═"
+UI_BORDER_VERTICAL="║"
 
-# ----------------------------------------------------------
-# Render Title
-# ----------------------------------------------------------
+UI_BORDER_TOP_LEFT="╔"
+UI_BORDER_TOP_RIGHT="╗"
 
-ui_render_title() {
+UI_BORDER_BOTTOM_LEFT="╚"
+UI_BORDER_BOTTOM_RIGHT="╝"
 
-    printf "║%*s%s%*s║\n" \
-        $(((UI_WIDTH-${#UI_TITLE})/2)) "" \
-        "$UI_TITLE" \
-        $(((UI_WIDTH-${#UI_TITLE})/2)) ""
-}
-
-# ----------------------------------------------------------
-# Render Separator
-# ----------------------------------------------------------
-
-ui_render_separator() {
-    echo "║$(printf '─%.0s' $(seq 1 "$UI_WIDTH"))║"
-}
-
-# ----------------------------------------------------------
-# Render Rows
-# ----------------------------------------------------------
-
-ui_render_rows() {
-
-    for row in "${UI_ROWS[@]}"
-    do
-        IFS="|" read -r key value <<< "$row"
-
-        printf "║  %-9s %-25s║\n" \
-            "$key" \
-            "$value"
-    done
-
-}
-
-# ----------------------------------------------------------
-# Render Bottom Border
-# ----------------------------------------------------------
-
-ui_render_bottom() {
-    echo "╚$(printf '═%.0s' $(seq 1 "$UI_WIDTH"))╝"
-}
-
-# ----------------------------------------------------------
-# Render Dashboard
-# ----------------------------------------------------------
-
-ui_render() {
-
-    ui_render_top
-
-    ui_render_title
-
-    ui_render_separator
-
-    ui_render_rows
-
-    ui_render_bottom
-
-}
+UI_SEPARATOR="─"
