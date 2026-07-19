@@ -31,9 +31,10 @@ ui_render_rows() {
     do
         IFS="|" read -r key value <<< "$row"
 
-        printf "║  %-9s %-25s║\n" \
-            "$key" \
-            "$value"
+	printf "║%*s%-*s %-*s║\n" \
+		"$UI_PADDING_LEFT" "" \
+		"$UI_KEY_WIDTH" "$key" \
+		"$UI_VALUE_WIDTH" "$value"
     done
 
 }

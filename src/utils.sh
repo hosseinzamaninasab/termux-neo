@@ -13,6 +13,17 @@ declare -a UI_STATUS
 # Dashboard title
 UI_TITLE=""
 UI_WIDTH=0
+TERM_WIDTH=0
+
+
+# ------------------------------------------------------
+# Layout Metrics
+# ------------------------------------------------------
+
+
+UI_PADDING_LEFT=2
+UI_KEY_WIDTH=9                                          UI_VALUE_WIDTH=30
+
 
 # ----------------------------------------------------------
 # Initialize UI Engine
@@ -23,7 +34,8 @@ ui_init() {
     UI_STATUS=()
     UI_TITLE=""
 
-    UI_WIDTH=$(tput cols)
+    TERM_WIDTH=$(tput cols)
+    UI_WIDTH=42
 }
 
 # ----------------------------------------------------------
