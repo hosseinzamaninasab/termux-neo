@@ -1,6 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
+set -e
+
 source src/utils.sh
+source src/layout.sh
 source src/dashboard.sh
 
 ui_init

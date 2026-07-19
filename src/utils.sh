@@ -22,7 +22,9 @@ TERM_WIDTH=0
 
 
 UI_PADDING_LEFT=2
-UI_KEY_WIDTH=9                                          UI_VALUE_WIDTH=30
+UI_KEY_WIDTH=9
+UI_FIELD_GAP=" "
+UI_VALUE_WIDTH=30
 
 
 # ----------------------------------------------------------
