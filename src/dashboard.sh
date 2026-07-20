@@ -11,12 +11,21 @@ ui_render_top() {
 
 
 ui_render_title() {
+    local title_width
+    local total_padding
+    local left_padding
+    local right_padding
+
+    title_width="${#UI_TITLE}"
+    total_padding=$((UI_WIDTH - title_width))
+
+    left_padding=$((total_padding / 2))
+    right_padding=$((total_padding - left_padding))
 
     printf "║%*s%s%*s║\n" \
-        $(((UI_WIDTH-${#UI_TITLE})/2)) "" \
+        "$left_padding" "" \
         "$UI_TITLE" \
-        $(((UI_WIDTH-${#UI_TITLE})/2)) ""
-
+        "$right_padding" ""
 }
 
 

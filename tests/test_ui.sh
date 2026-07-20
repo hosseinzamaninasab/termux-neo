@@ -7,6 +7,12 @@ source src/layout.sh
 source src/dashboard.sh
 
 ui_init
+
+# Use the reference portrait width for a deterministic test.
+TERM_WIDTH=56
+
+ui_calculate_width
+
 ui_title "TERMUX NEO"
 
 ui_add_row "USER" "Zoro"

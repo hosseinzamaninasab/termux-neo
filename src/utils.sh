@@ -12,19 +12,22 @@ declare -a UI_STATUS
 
 # Dashboard title
 UI_TITLE=""
-UI_WIDTH=0
-TERM_WIDTH=0
 
+# UI size state
+TERM_WIDTH=0
+UI_WIDTH=0
 
 # ------------------------------------------------------
 # Layout Metrics
 # ------------------------------------------------------
-
+UI_DEFAULT_WIDTH=42
+UI_MIN_WIDTH=32
+UI_BORDER_TOTAL_WIDTH=2
 
 UI_PADDING_LEFT=2
 UI_KEY_WIDTH=9
 UI_FIELD_GAP=" "
-UI_VALUE_WIDTH=30
+UI_VALUE_WIDTH=0
 
 
 # ----------------------------------------------------------
@@ -36,8 +39,10 @@ ui_init() {
     UI_STATUS=()
     UI_TITLE=""
 
-    TERM_WIDTH=$(tput cols)
-    UI_WIDTH=42
+    UI_WIDTH=0
+    UI_VALUE_WIDTH=0
+
+    TERM_WIDTH=$(tput cols 2>/dev/null || printf '0')
 }
 
 # ----------------------------------------------------------
