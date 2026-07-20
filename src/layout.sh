@@ -131,3 +131,69 @@ ui_calculate_margin() {
 
     ui_validate_layout
 }
+
+# ----------------------------------------------------------
+# Format Row Value
+# ----------------------------------------------------------
+
+ui_ellipsize_value() {
+    local value="$1"
+    local ellipsis_width
+    local visible_width
+
+    (( UI_VALUE_WIDTH > 0 )) || return 1
+
+    ellipsis_width="${#UI_ELLIPSIS}"
+
+    (( ellipsis_width > 0 )) || return 1
+    (( ellipsis_width <= UI_VALUE_WIDTH )) || return 1
+
+    if (( ${#value} <= UI_VALUE_WIDTH )); then
+        printf '%s' "$value"
+        return 0
+    fi
+
+    visible_width=$((UI_VALUE_WIDTH - ellipsis_width))
+
+    printf '%s%s' \
+        "${value:0:visible_width}" \
+        "$UI_ELLIPSIS"
+}
+
+
+# ----------------------------------------------------------
+# Validate Render Content
+# ----------------------------------------------------------
+
+ui_validate_content() {
+    local row
+    local key
+    local value
+    local ellipsis_width
+
+    ellipsis_width="${#UI_ELLIPSIS}"
+
+    (( ellipsis_width > 0 )) || return 1
+    (( ellipsis_width <= UI_VALUE_WIDTH )) || return 1
+
+    (( ${#UI_TITLE} <= UI_WIDTH )) || return 1
+
+    [[ "$UI_TITLE" != *$'\n'* ]] || return 1
+    [[ "$UI_TITLE" != *$'\r'* ]] || return 1
+    [[ "$UI_TITLE" != *$'\t'* ]] || return 1
+
+    [[ "$UI_ELLIPSIS" != *$'\n'* ]] || return 1
+    [[ "$UI_ELLIPSIS" != *$'\r'* ]] || return 1
+    [[ "$UI_ELLIPSIS" != *$'\t'* ]] || return 1
+
+    for row in "${UI_ROWS[@]}"
+    do
+        [[ "$row" != *$'\n'* ]] || return 1
+        [[ "$row" != *$'\r'* ]] || return 1
+        [[ "$row" != *$'\t'* ]] || return 1
+
+        IFS="|" read -r key value <<< "$row"
+
+        (( ${#key} <= UI_KEY_WIDTH )) || return 1
+    done
+}

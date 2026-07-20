@@ -5,10 +5,18 @@
 # ==========================================================
 
 
+# ----------------------------------------------------------
+# Render Left Margin
+# ----------------------------------------------------------
+
 ui_render_margin() {
     printf "%*s" "$UI_MARGIN_LEFT" ""
 }
 
+
+# ----------------------------------------------------------
+# Render Dashboard
+# ----------------------------------------------------------
 
 ui_render_top() {
     ui_render_margin
@@ -47,10 +55,14 @@ ui_render_rows() {
     local row
     local key
     local value
+    local display_value
 
     for row in "${UI_ROWS[@]}"
     do
         IFS="|" read -r key value <<< "$row"
+
+        display_value=$(ui_ellipsize_value "$value") ||
+            return 1
 
         ui_render_margin
 
@@ -58,7 +70,7 @@ ui_render_rows() {
             "$UI_PADDING_LEFT" "" \
             "$UI_KEY_WIDTH" "$key" \
             "$UI_FIELD_GAP" \
-            "$UI_VALUE_WIDTH" "$value"
+            "$UI_VALUE_WIDTH" "$display_value"
     done
 }
 
@@ -71,6 +83,7 @@ ui_render_bottom() {
 
 ui_render() {
     ui_validate_layout || return 1
+    ui_validate_content || return 1
 
     ui_render_top
     ui_render_title
