@@ -12,6 +12,7 @@ ui_init
 TERM_WIDTH=56
 
 ui_calculate_width
+ui_calculate_margin
 
 ui_title "TERMUX NEO"
 

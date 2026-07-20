@@ -5,7 +5,13 @@
 # ==========================================================
 
 
+ui_render_margin() {
+    printf "%*s" "$UI_MARGIN_LEFT" ""
+}
+
+
 ui_render_top() {
+    ui_render_margin
     echo "╔$(printf '═%.0s' $(seq 1 "$UI_WIDTH"))╗"
 }
 
@@ -22,6 +28,8 @@ ui_render_title() {
     left_padding=$((total_padding / 2))
     right_padding=$((total_padding - left_padding))
 
+    ui_render_margin
+
     printf "║%*s%s%*s║\n" \
         "$left_padding" "" \
         "$UI_TITLE" \
@@ -30,15 +38,21 @@ ui_render_title() {
 
 
 ui_render_separator() {
+    ui_render_margin
     echo "║$(printf '─%.0s' $(seq 1 "$UI_WIDTH"))║"
 }
 
 
 ui_render_rows() {
+    local row
+    local key
+    local value
 
     for row in "${UI_ROWS[@]}"
     do
         IFS="|" read -r key value <<< "$row"
+
+        ui_render_margin
 
         printf "║%*s%-*s%s%-*s║\n" \
             "$UI_PADDING_LEFT" "" \
@@ -46,26 +60,21 @@ ui_render_rows() {
             "$UI_FIELD_GAP" \
             "$UI_VALUE_WIDTH" "$value"
     done
-
 }
 
 
 ui_render_bottom() {
+    ui_render_margin
     echo "╚$(printf '═%.0s' $(seq 1 "$UI_WIDTH"))╝"
 }
 
-ui_render() {
 
+ui_render() {
     ui_validate_layout || return 1
 
     ui_render_top
-
     ui_render_title
-
     ui_render_separator
-
     ui_render_rows
-
     ui_render_bottom
-
 }

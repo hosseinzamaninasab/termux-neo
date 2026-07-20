@@ -16,6 +16,7 @@ UI_TITLE=""
 # UI size state
 TERM_WIDTH=0
 UI_WIDTH=0
+UI_MARGIN_LEFT=0
 
 # ------------------------------------------------------
 # Layout Metrics
@@ -41,6 +42,7 @@ ui_init() {
 
     UI_WIDTH=0
     UI_VALUE_WIDTH=0
+    UI_MARGIN_LEFT=0
 
     TERM_WIDTH=$(tput cols 2>/dev/null || printf '0')
 }
