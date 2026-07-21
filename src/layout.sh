@@ -412,3 +412,108 @@ ui_calculate_status_layout() {
         == UI_STATUS_WIDTH
     ))
 }
+
+# ==========================================================
+# Prompt Layout
+# ==========================================================
+
+ui_validate_prompt_content() {
+    local value
+
+    [[ -n "$UI_PROMPT_TOP_LEFT" ]] || return 1
+    [[ -n "$UI_PROMPT_BOTTOM_LEFT" ]] || return 1
+    [[ -n "$UI_PROMPT_HORIZONTAL" ]] || return 1
+    [[ -n "$UI_PROMPT_SYMBOL" ]] || return 1
+    [[ -n "$UI_PROMPT_ITEM_SEPARATOR" ]] || return 1
+    [[ -n "$UI_PROMPT_USER" ]] || return 1
+    [[ -n "$UI_PROMPT_PATH" ]] || return 1
+    [[ "$UI_PROMPT_USER" =~ ^[[:alnum:]_.-]+$ ]] || return 1
+
+    for value in "$UI_PROMPT_USER" "$UI_PROMPT_PATH"; do
+        [[ "$value" != *$'\n'* ]] || return 1
+        [[ "$value" != *$'\r'* ]] || return 1
+        [[ "$value" != *$'\t'* ]] || return 1
+        [[ "$value" != *$'\e'* ]] || return 1
+        [[ "$value" != *"•"* ]] || return 1
+    done
+}
+
+ui_fit_prompt_path() {
+    local path="${1-}"
+    local max_width="${2-0}"
+    local stripped suffix="" candidate part keep index
+    local -a parts
+
+    (( max_width > 0 )) || return 1
+
+    if (( ${#path} <= max_width )); then
+        printf '%s' "$path"
+        return 0
+    fi
+
+    (( max_width >= 2 )) || return 1
+
+    stripped="${path#/}"
+    IFS='/' read -r -a parts <<< "$stripped"
+
+    for (( index=${#parts[@]} - 1; index >= 0; index-- )); do
+        part="${parts[index]}"
+        [[ -n "$part" ]] || continue
+        [[ "$part" != "~" ]] || continue
+
+        if [[ -n "$suffix" ]]; then
+            candidate="…/${part}/${suffix}"
+        else
+            candidate="…/${part}"
+        fi
+
+        if (( ${#candidate} <= max_width )); then
+            suffix="${part}${suffix:+/$suffix}"
+        else
+            break
+        fi
+    done
+
+    if [[ -n "$suffix" ]]; then
+        printf '…/%s' "$suffix"
+        return 0
+    fi
+
+    keep=$((max_width - 1))
+    printf '…%s' "${path: -keep}"
+}
+
+ui_build_prompt_lines() {
+    local prefix available_path_width fitted_path
+
+    prefix="${UI_PROMPT_TOP_LEFT}${UI_PROMPT_HORIZONTAL} ${UI_PROMPT_USER}${UI_PROMPT_ITEM_SEPARATOR}"
+    available_path_width=$((UI_PROMPT_WIDTH - ${#prefix}))
+    (( available_path_width > 0 )) || return 1
+
+    fitted_path=$(ui_fit_prompt_path "$UI_PROMPT_PATH" "$available_path_width") || return 1
+
+    UI_PROMPT_LINE_TOP="${prefix}${fitted_path}"
+    UI_PROMPT_LINE_BOTTOM="${UI_PROMPT_BOTTOM_LEFT}${UI_PROMPT_HORIZONTAL}${UI_PROMPT_SYMBOL}"
+
+    (( ${#UI_PROMPT_LINE_TOP} <= UI_PROMPT_WIDTH )) || return 1
+    (( ${#UI_PROMPT_LINE_BOTTOM} <= UI_PROMPT_WIDTH )) || return 1
+}
+
+ui_calculate_prompt_layout() {
+    UI_PROMPT_WIDTH=0
+    UI_PROMPT_LINE_TOP=""
+    UI_PROMPT_LINE_BOTTOM=""
+
+    ui_validate_prompt_content || return 1
+    ui_calculate_width || return 1
+    ui_calculate_margin || return 1
+
+    UI_PROMPT_WIDTH=$((UI_WIDTH + UI_BORDER_TOTAL_WIDTH))
+
+    ui_build_prompt_lines || {
+        UI_PROMPT_WIDTH=0
+        UI_PROMPT_LINE_TOP=""
+        UI_PROMPT_LINE_BOTTOM=""
+        return 1
+    }
+}

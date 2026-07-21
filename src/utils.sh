@@ -24,11 +24,17 @@ UI_VALUE_WIDTH=0
 UI_ELLIPSIS="…"
 
 # ----------------------------------------------------------
+# Shared Inline Configuration
+# ----------------------------------------------------------
+
+UI_INLINE_SEPARATOR=" • "
+
+# ----------------------------------------------------------
 # Status Configuration
 # ----------------------------------------------------------
 
 UI_STATUS_FIELD_SEPARATOR=":"
-UI_STATUS_ITEM_SEPARATOR=" • "
+UI_STATUS_ITEM_SEPARATOR="$UI_INLINE_SEPARATOR"
 
 UI_STATUS_RULE_CHAR="═"
 UI_STATUS_RULE_SEGMENT_WIDTH=4
@@ -44,6 +50,27 @@ UI_STATUS_RULE=""
 
 UI_STATUS_PADDING_LEFT=0
 UI_STATUS_PADDING_RIGHT=0
+
+# ----------------------------------------------------------
+# Prompt Configuration
+# ----------------------------------------------------------
+
+UI_PROMPT_TOP_LEFT="╭"
+UI_PROMPT_BOTTOM_LEFT="╰"
+UI_PROMPT_HORIZONTAL="─"
+UI_PROMPT_SYMBOL="❯"
+UI_PROMPT_ITEM_SEPARATOR="$UI_INLINE_SEPARATOR"
+
+# ----------------------------------------------------------
+# Prompt State
+# ----------------------------------------------------------
+
+UI_PROMPT_USER=""
+UI_PROMPT_PATH=""
+
+UI_PROMPT_WIDTH=0
+UI_PROMPT_LINE_TOP=""
+UI_PROMPT_LINE_BOTTOM=""
 
 # ----------------------------------------------------------
 # UI State
@@ -66,6 +93,13 @@ ui_init() {
     UI_STATUS_PADDING_LEFT=0
     UI_STATUS_PADDING_RIGHT=0
 
+    UI_PROMPT_USER=""
+    UI_PROMPT_PATH=""
+
+    UI_PROMPT_WIDTH=0
+    UI_PROMPT_LINE_TOP=""
+    UI_PROMPT_LINE_BOTTOM=""
+
     TERM_WIDTH=$(tput cols 2>/dev/null || printf '0')
 }
 
@@ -82,6 +116,11 @@ ui_add_status() {
     local value="${2-}"
 
     UI_STATUS+=("${label}|${value}")
+}
+
+ui_set_prompt() {
+    UI_PROMPT_USER="${1-}"
+    UI_PROMPT_PATH="${2-}"
 }
 
 # ----------------------------------------------------------

@@ -6,6 +6,7 @@ source src/layout.sh
 source src/render.sh
 source src/dashboard.sh
 source src/status.sh
+source src/prompt.sh
 
 ui_init
 
@@ -28,3 +29,7 @@ ui_render
 
 printf '\n'
 ui_render_status
+
+printf '\n'
+ui_set_prompt "Zoro" "~"
+ui_render_prompt
