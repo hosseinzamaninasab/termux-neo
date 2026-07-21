@@ -4,23 +4,14 @@
 # Termux Neo - UI Engine
 # ==========================================================
 
-# Dashboard rows
 declare -a UI_ROWS
-
-# Status bar items
 declare -a UI_STATUS
 
-# Dashboard title
 UI_TITLE=""
-
-# UI size state
 TERM_WIDTH=0
 UI_WIDTH=0
 UI_MARGIN_LEFT=0
 
-# ------------------------------------------------------
-# Layout Metrics
-# ------------------------------------------------------
 UI_DEFAULT_WIDTH=42
 UI_MIN_WIDTH=32
 UI_BORDER_TOTAL_WIDTH=2
@@ -30,55 +21,71 @@ UI_KEY_WIDTH=9
 UI_FIELD_GAP=" "
 UI_VALUE_WIDTH=0
 
-# ----------------------------------------------------------
-# Content Formatting
-# ----------------------------------------------------------
 UI_ELLIPSIS="…"
 
+# ----------------------------------------------------------
+# Status Configuration
+# ----------------------------------------------------------
+
+UI_STATUS_FIELD_SEPARATOR=":"
+UI_STATUS_ITEM_SEPARATOR=" · "
+
+UI_STATUS_RULE_CHAR="═"
+UI_STATUS_RULE_SEGMENT_WIDTH=4
+UI_STATUS_RULE_GAP=" "
 
 # ----------------------------------------------------------
-# Initialize UI Engine
+# Status Layout State
+# ----------------------------------------------------------
+
+UI_STATUS_WIDTH=0
+UI_STATUS_TEXT=""
+UI_STATUS_RULE=""
+
+UI_STATUS_PADDING_LEFT=0
+UI_STATUS_PADDING_RIGHT=0
+
+# ----------------------------------------------------------
+# UI State
 # ----------------------------------------------------------
 
 ui_init() {
     UI_ROWS=()
     UI_STATUS=()
+
     UI_TITLE=""
 
     UI_WIDTH=0
     UI_VALUE_WIDTH=0
     UI_MARGIN_LEFT=0
 
+    UI_STATUS_WIDTH=0
+    UI_STATUS_TEXT=""
+    UI_STATUS_RULE=""
+
+    UI_STATUS_PADDING_LEFT=0
+    UI_STATUS_PADDING_RIGHT=0
+
     TERM_WIDTH=$(tput cols 2>/dev/null || printf '0')
 }
-
-# ----------------------------------------------------------
-# Set Dashboard Title
-# ----------------------------------------------------------
 
 ui_title() {
     UI_TITLE="$1"
 }
 
-# ----------------------------------------------------------
-# Add Dashboard Row
-# ----------------------------------------------------------
-
 ui_add_row() {
     UI_ROWS+=("$1|$2")
 }
 
-# ----------------------------------------------------------
-# Add Status Item
-# ----------------------------------------------------------
-
 ui_add_status() {
-    UI_STATUS+=("$1")
+    local label="${1-}"
+    local value="${2-}"
+
+    UI_STATUS+=("${label}|${value}")
 }
 
-
 # ----------------------------------------------------------
-# UI Borders
+# Dashboard Characters
 # ----------------------------------------------------------
 
 UI_BORDER_HORIZONTAL="═"

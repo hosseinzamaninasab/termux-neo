@@ -4,6 +4,7 @@ set -e
 
 source src/utils.sh
 source src/layout.sh
+source src/render.sh
 source src/dashboard.sh
 
 

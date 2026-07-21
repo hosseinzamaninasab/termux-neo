@@ -197,3 +197,218 @@ ui_validate_content() {
         (( ${#key} <= UI_KEY_WIDTH )) || return 1
     done
 }
+
+# ==========================================================
+# Status Layout Engine
+# ==========================================================
+
+ui_repeat_character() {
+    local character="$1"
+    local count="$2"
+    local output=""
+    local index
+
+    (( count >= 0 )) || return 1
+    [[ -n "$character" ]] || return 1
+
+    for ((index = 0; index < count; index++)); do
+        output+="$character"
+    done
+
+    printf '%s' "$output"
+}
+
+ui_validate_status_content() {
+    local entry label value
+
+    [[ -n "$UI_STATUS_FIELD_SEPARATOR" ]] || return 1
+    [[ -n "$UI_STATUS_ITEM_SEPARATOR" ]] || return 1
+    [[ -n "$UI_STATUS_RULE_CHAR" ]] || return 1
+    [[ -n "$UI_STATUS_RULE_GAP" ]] || return 1
+
+    (( UI_STATUS_RULE_SEGMENT_WIDTH > 0 )) || return 1
+
+    for entry in "${UI_STATUS[@]}"; do
+        # Validate the raw stored entry before splitting it.
+        [[ "$entry" != *$'\n'* ]] || return 1
+        [[ "$entry" != *$'\r'* ]] || return 1
+        [[ "$entry" != *$'\t'* ]] || return 1
+        [[ "$entry" != *$'\e'* ]] || return 1
+
+        # Exactly one internal delimiter must exist.
+        [[ "$entry" == *"|"* ]] || return 1
+
+        label="${entry%%|*}"
+        value="${entry#*|}"
+
+        [[ "$value" != *"|"* ]] || return 1
+
+        [[ -n "$label" ]] || return 1
+        [[ -n "$value" ]] || return 1
+
+        [[ "$label" =~ ^[A-Z][A-Z0-9_]*$ ]] || return 1
+    done
+}
+
+ui_join_status_tokens() {
+    local output=""
+    local token
+
+    for token in "$@"; do
+        if [[ -n "$output" ]]; then
+            output+="$UI_STATUS_ITEM_SEPARATOR"
+        fi
+
+        output+="$token"
+    done
+
+    printf '%s' "$output"
+}
+
+ui_build_status_text() {
+    local entry label value token candidate joined
+    local truncated=0
+    local last_index
+    local -a tokens=()
+    local -a retained=()
+
+    UI_STATUS_TEXT=""
+
+    (( UI_STATUS_WIDTH > 0 )) || return 1
+
+    if (( ${#UI_STATUS[@]} == 0 )); then
+        return 0
+    fi
+
+    ui_validate_status_content || return 1
+
+    for entry in "${UI_STATUS[@]}"; do
+        label="${entry%%|*}"
+        value="${entry#*|}"
+
+        token="${label}${UI_STATUS_FIELD_SEPARATOR}${value}"
+
+        (( ${#token} <= UI_STATUS_WIDTH )) || return 1
+
+        tokens+=("$token")
+    done
+
+    for token in "${tokens[@]}"; do
+        candidate=$(ui_join_status_tokens "${retained[@]}" "$token")
+
+        if (( ${#candidate} <= UI_STATUS_WIDTH )); then
+            retained+=("$token")
+        else
+            truncated=1
+            break
+        fi
+    done
+
+    if (( truncated == 0 )); then
+        UI_STATUS_TEXT=$(ui_join_status_tokens "${retained[@]}")
+        return 0
+    fi
+
+    while (( ${#retained[@]} > 0 )); do
+        joined=$(ui_join_status_tokens "${retained[@]}")
+        candidate="${joined}${UI_STATUS_ITEM_SEPARATOR}${UI_ELLIPSIS}"
+
+        if (( ${#candidate} <= UI_STATUS_WIDTH )); then
+            UI_STATUS_TEXT="$candidate"
+            return 0
+        fi
+
+        last_index=$((${#retained[@]} - 1))
+        unset 'retained[last_index]'
+    done
+
+    return 1
+}
+
+ui_build_status_rule() {
+    local remaining segment_width gap_width chunk
+
+    UI_STATUS_RULE=""
+
+    (( UI_STATUS_WIDTH > 0 )) || return 1
+    (( UI_STATUS_RULE_SEGMENT_WIDTH > 0 )) || return 1
+
+    [[ -n "$UI_STATUS_RULE_CHAR" ]] || return 1
+    [[ -n "$UI_STATUS_RULE_GAP" ]] || return 1
+
+    gap_width="${#UI_STATUS_RULE_GAP}"
+    (( gap_width > 0 )) || return 1
+
+    remaining="$UI_STATUS_WIDTH"
+
+    while (( remaining > 0 )); do
+        segment_width="$UI_STATUS_RULE_SEGMENT_WIDTH"
+
+        if (( segment_width > remaining )); then
+            segment_width="$remaining"
+        fi
+
+        chunk=$(ui_repeat_character \
+            "$UI_STATUS_RULE_CHAR" \
+            "$segment_width") || return 1
+
+        UI_STATUS_RULE+="$chunk"
+        remaining=$((remaining - segment_width))
+
+        (( remaining > 0 )) || break
+
+        if (( remaining <= gap_width )); then
+            chunk=$(ui_repeat_character \
+                "$UI_STATUS_RULE_CHAR" \
+                "$remaining") || return 1
+
+            UI_STATUS_RULE+="$chunk"
+            remaining=0
+            break
+        fi
+
+        UI_STATUS_RULE+="$UI_STATUS_RULE_GAP"
+        remaining=$((remaining - gap_width))
+    done
+
+    (( ${#UI_STATUS_RULE} == UI_STATUS_WIDTH )) || return 1
+    [[ "$UI_STATUS_RULE" != *" " ]] || return 1
+}
+
+ui_calculate_status_layout() {
+    local available_padding
+
+    UI_STATUS_WIDTH=0
+    UI_STATUS_TEXT=""
+    UI_STATUS_RULE=""
+
+    UI_STATUS_PADDING_LEFT=0
+    UI_STATUS_PADDING_RIGHT=0
+
+    ui_validate_layout || return 1
+
+    UI_STATUS_WIDTH=$((UI_WIDTH + UI_BORDER_TOTAL_WIDTH))
+
+    (( UI_STATUS_WIDTH > 0 )) || return 1
+    (( UI_STATUS_WIDTH <= TERM_WIDTH )) || return 1
+
+    if (( ${#UI_STATUS[@]} == 0 )); then
+        return 0
+    fi
+
+    ui_build_status_text || return 1
+    ui_build_status_rule || return 1
+
+    available_padding=$((UI_STATUS_WIDTH - ${#UI_STATUS_TEXT}))
+    (( available_padding >= 0 )) || return 1
+
+    UI_STATUS_PADDING_LEFT=$((available_padding / 2))
+    UI_STATUS_PADDING_RIGHT=$((available_padding - UI_STATUS_PADDING_LEFT))
+
+    ((
+        UI_STATUS_PADDING_LEFT
+        + ${#UI_STATUS_TEXT}
+        + UI_STATUS_PADDING_RIGHT
+        == UI_STATUS_WIDTH
+    ))
+}
