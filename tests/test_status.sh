@@ -57,7 +57,7 @@ add_default_status
 ui_calculate_status_layout ||
     fail "default Status layout failed"
 
-expected_text="NET:UP · VPN:ON · BAT:82+ · TIME:21:35"
+expected_text="NET:UP • VPN:ON • BAT:82+ • TIME:21:35"
 expected_rule="════ ════ ════ ════ ════ ════ ════ ════ ════"
 
 [[ "$UI_STATUS_TEXT" == "$expected_text" ]] ||
@@ -97,7 +97,7 @@ add_default_status
 ui_calculate_status_layout ||
     fail "narrow Status layout failed"
 
-expected_narrow="NET:UP · VPN:ON · BAT:82+ · …"
+expected_narrow="NET:UP • VPN:ON • BAT:82+ • …"
 
 [[ "$UI_STATUS_TEXT" == "$expected_narrow" ]] ||
     fail "narrow overflow policy mismatch"

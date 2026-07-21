@@ -28,7 +28,7 @@ UI_ELLIPSIS="…"
 # ----------------------------------------------------------
 
 UI_STATUS_FIELD_SEPARATOR=":"
-UI_STATUS_ITEM_SEPARATOR=" · "
+UI_STATUS_ITEM_SEPARATOR=" • "
 
 UI_STATUS_RULE_CHAR="═"
 UI_STATUS_RULE_SEGMENT_WIDTH=4

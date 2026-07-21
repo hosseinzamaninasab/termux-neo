@@ -82,7 +82,7 @@ expected_content_line="${margin}${left_padding}${UI_STATUS_TEXT}${right_padding}
 (( ${#UI_STATUS_RULE} == 44 )) ||
     fail "default Status rule is not 44 columns"
 
-[[ "${lines[1]}" == *"NET:UP · VPN:ON · BAT:82+ · TIME:21:35"* ]] ||
+[[ "${lines[1]}" == *"NET:UP • VPN:ON • BAT:82+ • TIME:21:35"* ]] ||
     fail "default Status text missing"
 
 [[ "$output" != *"%"* ]] ||
@@ -112,7 +112,7 @@ mapfile -t lines <<< "$output"
 (( ${#lines[2]} == 34 )) ||
     fail "narrow bottom rule width mismatch"
 
-[[ "${lines[1]}" == *"NET:UP · VPN:ON · BAT:82+ · …"* ]] ||
+[[ "${lines[1]}" == *"NET:UP • VPN:ON • BAT:82+ • …"* ]] ||
     fail "narrow overflow output mismatch"
 
 # ----------------------------------------------------------
