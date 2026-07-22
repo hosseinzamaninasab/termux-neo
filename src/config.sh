@@ -1,13 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 # ==========================================================
-# Termux Neo - Safe Configuration Foundation
+# Termux Neo - Versioned Settings Boundary
 # ==========================================================
 
-TERMUX_NEO_CONFIG_DISPLAY_USER=""
+TERMUX_NEO_SETTINGS_SCHEMA_CURRENT="1"
+TERMUX_NEO_DISPLAY_USER_MAX_LENGTH="28"
+
+TERMUX_NEO_DEFAULT_DISPLAY_USER=""
+TERMUX_NEO_DEFAULT_THEME="neo"
+TERMUX_NEO_DEFAULT_COLOR_MODE="auto"
+TERMUX_NEO_DEFAULT_STARTUP_INTEGRATION="false"
+
+TERMUX_NEO_CONFIG_SCHEMA_VERSION="$TERMUX_NEO_SETTINGS_SCHEMA_CURRENT"
+TERMUX_NEO_CONFIG_DISPLAY_USER="$TERMUX_NEO_DEFAULT_DISPLAY_USER"
+TERMUX_NEO_CONFIG_THEME="$TERMUX_NEO_DEFAULT_THEME"
+TERMUX_NEO_CONFIG_COLOR_MODE="$TERMUX_NEO_DEFAULT_COLOR_MODE"
+TERMUX_NEO_CONFIG_STARTUP_INTEGRATION="$TERMUX_NEO_DEFAULT_STARTUP_INTEGRATION"
 
 termux_neo_config_reset() {
-    TERMUX_NEO_CONFIG_DISPLAY_USER=""
+    TERMUX_NEO_CONFIG_SCHEMA_VERSION="$TERMUX_NEO_SETTINGS_SCHEMA_CURRENT"
+    TERMUX_NEO_CONFIG_DISPLAY_USER="$TERMUX_NEO_DEFAULT_DISPLAY_USER"
+    TERMUX_NEO_CONFIG_THEME="$TERMUX_NEO_DEFAULT_THEME"
+    TERMUX_NEO_CONFIG_COLOR_MODE="$TERMUX_NEO_DEFAULT_COLOR_MODE"
+    TERMUX_NEO_CONFIG_STARTUP_INTEGRATION="$TERMUX_NEO_DEFAULT_STARTUP_INTEGRATION"
 }
 
 termux_neo_config_trim() {
@@ -23,6 +39,7 @@ termux_neo_config_validate_display_user() {
     local value="${1-}"
 
     [[ -n "$value" ]] || return 1
+    (( ${#value} <= TERMUX_NEO_DISPLAY_USER_MAX_LENGTH )) || return 1
     [[ "$value" =~ ^[[:alnum:]_.-]+$ ]] || return 1
 
     [[ "$value" != *$'\n'* ]] || return 1
@@ -30,6 +47,45 @@ termux_neo_config_validate_display_user() {
     [[ "$value" != *$'\t'* ]] || return 1
     [[ "$value" != *$'\e'* ]] || return 1
     [[ "$value" != *"•"* ]] || return 1
+}
+
+termux_neo_config_validate_schema_version() {
+    local value="${1-}"
+
+    [[ "$value" == "$TERMUX_NEO_SETTINGS_SCHEMA_CURRENT" ]]
+}
+
+termux_neo_config_validate_theme() {
+    local value="${1-}"
+
+    [[ "$value" == "neo" || "$value" == "matrix" ]]
+}
+
+termux_neo_config_validate_color_mode() {
+    local value="${1-}"
+
+    [[ "$value" == "auto" ||
+       "$value" == "always" ||
+       "$value" == "never" ]]
+}
+
+termux_neo_config_validate_startup_integration() {
+    local value="${1-}"
+
+    [[ "$value" == "true" || "$value" == "false" ]]
+}
+
+termux_neo_config_migrate_schema() {
+    local source_version="${1-}"
+
+    case "$source_version" in
+        0|1)
+            printf '%s' "$TERMUX_NEO_SETTINGS_SCHEMA_CURRENT"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 termux_neo_config_resolve_display_user() {
@@ -59,7 +115,18 @@ termux_neo_config_load() {
     local line=""
     local key=""
     local value=""
+    local parsed_display_user="$TERMUX_NEO_DEFAULT_DISPLAY_USER"
+    local parsed_theme="$TERMUX_NEO_DEFAULT_THEME"
+    local parsed_color_mode="$TERMUX_NEO_DEFAULT_COLOR_MODE"
+    local parsed_startup_integration="$TERMUX_NEO_DEFAULT_STARTUP_INTEGRATION"
+    local source_schema_version="0"
+    local migrated_schema_version=""
+    local schema_version_seen=0
     local display_user_seen=0
+    local theme_seen=0
+    local color_mode_seen=0
+    local startup_integration_seen=0
+    local versioned_key_seen=0
 
     termux_neo_config_reset
 
@@ -83,15 +150,60 @@ termux_neo_config_load() {
         value="$(termux_neo_config_trim "${line#*=}")"
 
         case "$key" in
+            schema_version)
+                (( schema_version_seen == 0 )) || return 1
+                termux_neo_config_validate_schema_version "$value" || return 1
+                source_schema_version="$value"
+                schema_version_seen=1
+                ;;
             display_user)
                 (( display_user_seen == 0 )) || return 1
                 termux_neo_config_validate_display_user "$value" || return 1
-                TERMUX_NEO_CONFIG_DISPLAY_USER="$value"
+                parsed_display_user="$value"
                 display_user_seen=1
+                ;;
+            theme)
+                (( theme_seen == 0 )) || return 1
+                termux_neo_config_validate_theme "$value" || return 1
+                parsed_theme="$value"
+                theme_seen=1
+                versioned_key_seen=1
+                ;;
+            color_mode)
+                (( color_mode_seen == 0 )) || return 1
+                termux_neo_config_validate_color_mode "$value" || return 1
+                parsed_color_mode="$value"
+                color_mode_seen=1
+                versioned_key_seen=1
+                ;;
+            startup_integration)
+                (( startup_integration_seen == 0 )) || return 1
+                termux_neo_config_validate_startup_integration "$value" || return 1
+                parsed_startup_integration="$value"
+                startup_integration_seen=1
+                versioned_key_seen=1
                 ;;
             *)
                 return 1
                 ;;
         esac
     done < "$config_file"
+
+    # A Task 14 file without schema_version is legacy schema 0. It may contain
+    # only display_user; all v1-only keys require an explicit schema version.
+    if (( schema_version_seen == 0 && versioned_key_seen != 0 )); then
+        return 1
+    fi
+
+    migrated_schema_version="$(
+        termux_neo_config_migrate_schema "$source_schema_version"
+    )" || return 1
+
+    # Commit parsed values only after the whole file and migration path pass.
+    # Invalid files therefore leave the safe defaults installed by reset.
+    TERMUX_NEO_CONFIG_SCHEMA_VERSION="$migrated_schema_version"
+    TERMUX_NEO_CONFIG_DISPLAY_USER="$parsed_display_user"
+    TERMUX_NEO_CONFIG_THEME="$parsed_theme"
+    TERMUX_NEO_CONFIG_COLOR_MODE="$parsed_color_mode"
+    TERMUX_NEO_CONFIG_STARTUP_INTEGRATION="$parsed_startup_integration"
 }
