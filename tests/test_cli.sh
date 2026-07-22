@@ -83,16 +83,23 @@ run_cli 1 --config
    "termux-neo: configuration path is invalid" ]] ||
     fail "invalid config path error mismatch"
 
-run_cli 3 --diagnose
-[[ ! -s "$stdout_file" ]] || fail "unavailable diagnostics produced stdout"
-[[ "$(cat "$stderr_file")" == \
-   "termux-neo: diagnostics are unavailable until the next release step" ]] ||
-    fail "unavailable diagnostics error mismatch"
-
 [[ ! -s "$probe_file" ]] ||
-    fail "non-rendering command probed device data"
+    fail "help, version, or config command probed device data"
 (( render_count == 0 )) ||
-    fail "non-rendering command invoked the renderer"
+    fail "help, version, or config command invoked the renderer"
+
+diagnostic_count=0
+termux_neo_diagnose() {
+    (( diagnostic_count += 1 ))
+    printf 'diagnostics\n'
+}
+
+run_cli 0 --diagnose
+[[ "$(cat "$stdout_file")" == "diagnostics" ]] ||
+    fail "diagnostics command did not enter the stable hook"
+[[ ! -s "$stderr_file" ]] || fail "diagnostics command produced stderr"
+(( diagnostic_count == 1 )) || fail "diagnostics hook count mismatch"
+(( render_count == 0 )) || fail "diagnostics command invoked the renderer"
 
 run_cli 0
 [[ "$(cat "$stdout_file")" == "render::" ]] ||

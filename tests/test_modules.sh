@@ -72,8 +72,10 @@ system_value="$(run_silent module_system_name)"
 network_state="$(run_silent module_network_state)"
 network_type="$(run_silent module_network_type)"
 local_ip="$(run_silent module_network_local_ip)"
+network_source="$(run_silent module_network_local_ip_source)"
 vpn_state="$(run_silent module_vpn_state)"
 battery_value="$(run_silent module_battery_value)"
+battery_source="$(run_silent module_battery_source)"
 time_value="$(run_silent module_time_value)"
 
 [[ "$network_state" == "UP" || "$network_state" == "DOWN" ]] ||
@@ -81,6 +83,11 @@ time_value="$(run_silent module_time_value)"
 
 [[ "$vpn_state" == "ON" || "$vpn_state" == "OFF" ]] ||
     fail "invalid VPN state: $vpn_state"
+
+case "$network_source" in
+    ip|ifconfig|getprop|unavailable) ;;
+    *) fail "invalid network data source: $network_source" ;;
+esac
 
 [[ "$battery_value" == "--" || "$battery_value" =~ ^[0-9]{1,3}\+?$ ]] ||
     fail "invalid battery value: $battery_value"
@@ -90,6 +97,11 @@ if [[ "$battery_value" != "--" ]]; then
     (( battery_number >= 0 && battery_number <= 100 )) ||
         fail "battery value outside valid range"
 fi
+
+case "$battery_source" in
+    termux-battery-status|sysfs|dumpsys|unavailable) ;;
+    *) fail "invalid battery data source: $battery_source" ;;
+esac
 
 [[ "$time_value" == "--:--" || "$time_value" =~ ^[0-9]{2}:[0-9]{2}$ ]] ||
     fail "invalid time value: $time_value"
@@ -107,7 +119,9 @@ printf 'DEVICE=%s\n' "$device_value"
 printf 'SYSTEM=%s\n' "$system_value"
 printf 'NETWORK=%s (%s)\n' "$network_type" "$network_state"
 printf 'LOCAL_IP=%s\n' "$local_ip"
+printf 'NETWORK_SOURCE=%s\n' "$network_source"
 printf 'VPN=%s\n' "$vpn_state"
 printf 'BATTERY=%s\n' "$battery_value"
+printf 'BATTERY_SOURCE=%s\n' "$battery_source"
 printf 'TIME=%s\n' "$time_value"
 printf 'PASS: safe data modules\n'

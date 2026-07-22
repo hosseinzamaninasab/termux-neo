@@ -25,7 +25,7 @@ termux_neo_cli_help() {
         'Options:' \
         '  --help          Show this help and exit' \
         '  --version       Show the application version and exit' \
-        '  --diagnose      Run built-in diagnostics when available' \
+        '  --diagnose      Run built-in diagnostics and exit' \
         '  --config        Print the active configuration path and exit' \
         '  --theme NAME    Render once with theme neo or matrix' \
         '  --no-color      Render once without ANSI color' \

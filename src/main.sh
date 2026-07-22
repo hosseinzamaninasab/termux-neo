@@ -30,6 +30,9 @@ source "$SCRIPT_DIR/modules/vpn.sh"
 source "$SCRIPT_DIR/modules/battery.sh"
 source "$SCRIPT_DIR/modules/datetime.sh"
 
+# Explicit, privacy-safe built-in diagnostics.
+source "$SCRIPT_DIR/diagnostics.sh"
+
 termux_neo_collect_value() {
     local function_name="${1-}"
     local fallback="${2-Unavailable}"

@@ -10,7 +10,7 @@ shell prompt, starts a daemon, or creates a background refresh loop.
 | `termux-neo` | Load configuration, collect safe device data, render once, and exit. |
 | `termux-neo --help` | Print command help without probing the device or rendering UI. |
 | `termux-neo --version` | Print the version from `VERSION` without probing the device or rendering UI. |
-| `termux-neo --diagnose` | Enter the stable diagnostics route. The report implementation is added in Task 18; until then this route exits with status 3 and a concise error. |
+| `termux-neo --diagnose` | Print the privacy-safe built-in diagnostics report and exit. |
 | `termux-neo --config` | Print the active configuration path without reading or changing the file. |
 | `termux-neo --theme NAME` | Render once with the `neo` or `matrix` theme, without saving the override. |
 | `termux-neo --no-color` | Render once with ANSI color disabled, without changing the saved color mode. |
@@ -27,9 +27,31 @@ user's settings file.
 - Status `1` means runtime data, configuration, layout, rendering, or version
   loading failed.
 - Status `2` means the command line is invalid.
-- Status `3` means a recognized command is not implemented at the current
-  development checkpoint.
+- Status `3` remains reserved for a recognized command route that is not
+  implemented at a future development checkpoint.
 
-Help, version, config-path, and unavailable-diagnostics paths do not call data
-modules or renderers. No CLI path changes `PS1`, installs startup integration,
-or starts a background process.
+Help, version, and config-path paths do not call data modules or renderers.
+Diagnostics explicitly collects only approved application/configuration state,
+optional-command availability, selected network/battery sources, and safe module
+values. It never dumps the environment, reads secrets, calls UI renderers, or
+emits ANSI color. A valid or missing configuration returns status 0; an invalid
+configuration path, invalid configuration, or unavailable application version
+returns status 1 after a complete report. No CLI path changes `PS1`, installs
+startup integration, or starts a background process.
+
+## Diagnostics fields
+
+The report uses stable `LABEL: value` lines and includes:
+
+- application version and installation path;
+- config path, validation status, and schema status;
+- terminal width, selected theme, and selected color mode;
+- availability of `ip`, `ifconfig`, `termux-battery-status`, `dumpsys`, and
+  `getprop`;
+- selected network (`NETWORK_SOURCE`) and battery (`BATTERY_SOURCE`) data
+  sources when determinable;
+- the same cleaned device, network, VPN, battery, and time values used by the
+  production modules.
+
+Unavailable optional data is labeled `Unavailable` or `unavailable`. The
+report is generated only when the user explicitly runs `--diagnose`.

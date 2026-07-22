@@ -111,12 +111,58 @@ module_battery_format_record() {
     printf '%s%s' "$percentage" "$suffix"
 }
 
-module_battery_value() {
-    local record="" value=""
+module_battery_selected_record() {
+    local record=""
 
     record="$(module_battery_from_termux_api 2>/dev/null || true)"
-    [[ -n "$record" ]] || record="$(module_battery_from_sysfs 2>/dev/null || true)"
-    [[ -n "$record" ]] || record="$(module_battery_from_dumpsys 2>/dev/null || true)"
+    if [[ -n "$record" ]]; then
+        printf 'termux-battery-status|%s' "$record"
+        return 0
+    fi
+
+    record="$(module_battery_from_sysfs 2>/dev/null || true)"
+    if [[ -n "$record" ]]; then
+        printf 'sysfs|%s' "$record"
+        return 0
+    fi
+
+    record="$(module_battery_from_dumpsys 2>/dev/null || true)"
+    if [[ -n "$record" ]]; then
+        printf 'dumpsys|%s' "$record"
+        return 0
+    fi
+
+    printf 'unavailable|'
+}
+
+module_battery_source() {
+    local selected=""
+    local source=""
+
+    selected="$(module_battery_selected_record 2>/dev/null || true)"
+    [[ "$selected" == *"|"* ]] || {
+        printf 'unavailable'
+        return 0
+    }
+
+    source="${selected%%|*}"
+    case "$source" in
+        termux-battery-status|sysfs|dumpsys|unavailable)
+            printf '%s' "$source"
+            ;;
+        *)
+            printf 'unavailable'
+            ;;
+    esac
+}
+
+module_battery_value() {
+    local selected="" record="" value=""
+
+    selected="$(module_battery_selected_record 2>/dev/null || true)"
+    if [[ "$selected" == *"|"* ]]; then
+        record="${selected#*|}"
+    fi
 
     if [[ -n "$record" ]]; then
         value="$(module_battery_format_record "$record" 2>/dev/null || true)"

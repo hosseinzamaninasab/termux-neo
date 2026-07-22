@@ -111,7 +111,7 @@ module_network_parse_ifconfig_ipv4() {
     return 1
 }
 
-module_network_local_ip() {
+module_network_local_ip_record() {
     local interface=""
     local raw=""
     local value=""
@@ -124,7 +124,7 @@ module_network_local_ip() {
             awk 'NR == 1 { sub(/\/.*/, "", $4); print $4; exit }'
         )"
         if module_is_ipv4_address "$value" && [[ "$value" != 127.* ]]; then
-            printf '%s' "$value"
+            printf 'ip|%s' "$value"
             return 0
         fi
     fi
@@ -141,7 +141,7 @@ module_network_local_ip() {
         fi
 
         if [[ -n "$value" ]]; then
-            printf '%s' "$value"
+            printf 'ifconfig|%s' "$value"
             return 0
         fi
     fi
@@ -151,11 +151,44 @@ module_network_local_ip() {
         do
             value="$(module_read_getprop "$key" 2>/dev/null || true)"
             if module_is_ipv4_address "$value" && [[ "$value" != 127.* ]]; then
-                printf '%s' "$value"
+                printf 'getprop|%s' "$value"
                 return 0
             fi
         done
     fi
 
-    printf 'Unavailable'
+    printf 'unavailable|Unavailable'
+}
+
+module_network_local_ip() {
+    local record=""
+
+    record="$(module_network_local_ip_record 2>/dev/null || true)"
+    [[ "$record" == *"|"* ]] || {
+        printf 'Unavailable'
+        return 0
+    }
+
+    printf '%s' "${record#*|}"
+}
+
+module_network_local_ip_source() {
+    local record=""
+    local source=""
+
+    record="$(module_network_local_ip_record 2>/dev/null || true)"
+    [[ "$record" == *"|"* ]] || {
+        printf 'unavailable'
+        return 0
+    }
+
+    source="${record%%|*}"
+    case "$source" in
+        ip|ifconfig|getprop|unavailable)
+            printf '%s' "$source"
+            ;;
+        *)
+            printf 'unavailable'
+            ;;
+    esac
 }
