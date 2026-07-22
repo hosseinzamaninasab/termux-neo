@@ -17,12 +17,28 @@ it never sources or evaluates configuration as shell code.
 | --- | --- | --- | --- |
 | `schema_version` | `1` | `1` | Selects the supported settings contract. |
 | `display_user` | empty | 1–28 letters, numbers, `_`, `.`, `-` | Used by Dashboard and Prompt after precedence resolution. |
-| `theme` | `neo` | `neo`, `matrix` | Reserved for activation in Task 16. |
-| `color_mode` | `auto` | `auto`, `always`, `never` | Reserved for activation in Task 16. |
+| `theme` | `neo` | `neo`, `matrix` | Selects a built-in semantic color palette. |
+| `color_mode` | `auto` | `auto`, `always`, `never` | Controls ANSI color output. |
 | `startup_integration` | `false` | `true`, `false` | Reserved for activation in Task 19. |
 
-The reserved settings are validated and stored by the configuration boundary,
-but they do not change runtime behavior before their approved roadmap tasks.
+`startup_integration` is validated and stored by the configuration boundary,
+but it does not change runtime behavior before Task 19.
+
+## Themes and color modes
+
+The default `neo` palette uses restrained cyan and magenta accents. The
+optional `matrix` palette uses a restrained green accent without changing UI
+text, geometry, or layout behavior.
+
+- `auto` enables color only for a supported terminal and disables it when a
+  non-empty `NO_COLOR` environment variable is present.
+- `always` is an explicit application preference and emits color even when
+  output is redirected or `NO_COLOR` is set.
+- `never` emits complete plain-text output with no ANSI escapes.
+
+Theme escape sequences are introduced only while rendering. Configuration,
+UI state, validation, and visible-width calculations always contain plain
+text, so colored and uncolored output have identical visible geometry.
 
 ## Display-user precedence
 

@@ -13,8 +13,13 @@
 # ----------------------------------------------------------
 
 ui_render_top() {
+    local line
+
+    line="╔$(printf '═%.0s' $(seq 1 "$UI_WIDTH"))╗"
+
     ui_render_margin
-    echo "╔$(printf '═%.0s' $(seq 1 "$UI_WIDTH"))╗"
+    ui_render_styled border "$line"
+    printf '\n'
 }
 
 
@@ -32,16 +37,23 @@ ui_render_title() {
 
     ui_render_margin
 
-    printf "║%*s%s%*s║\n" \
-        "$left_padding" "" \
-        "$UI_TITLE" \
-        "$right_padding" ""
+    ui_render_styled border "║"
+    printf '%*s' "$left_padding" ""
+    ui_render_styled title "$UI_TITLE"
+    printf '%*s' "$right_padding" ""
+    ui_render_styled border "║"
+    printf '\n'
 }
 
 
 ui_render_separator() {
+    local line
+
+    line="║$(printf '─%.0s' $(seq 1 "$UI_WIDTH"))║"
+
     ui_render_margin
-    echo "║$(printf '─%.0s' $(seq 1 "$UI_WIDTH"))║"
+    ui_render_styled border "$line"
+    printf '\n'
 }
 
 
@@ -60,18 +72,27 @@ ui_render_rows() {
 
         ui_render_margin
 
-        printf "║%*s%-*s%s%-*s║\n" \
-            "$UI_PADDING_LEFT" "" \
-            "$UI_KEY_WIDTH" "$key" \
-            "$UI_FIELD_GAP" \
-            "$UI_VALUE_WIDTH" "$display_value"
+        ui_render_styled border "║"
+        printf '%*s' "$UI_PADDING_LEFT" ""
+        ui_render_styled label "$key"
+        printf '%*s' "$((UI_KEY_WIDTH - ${#key}))" ""
+        printf '%s' "$UI_FIELD_GAP"
+        ui_render_styled value "$display_value"
+        printf '%*s' "$((UI_VALUE_WIDTH - ${#display_value}))" ""
+        ui_render_styled border "║"
+        printf '\n'
     done
 }
 
 
 ui_render_bottom() {
+    local line
+
+    line="╚$(printf '═%.0s' $(seq 1 "$UI_WIDTH"))╝"
+
     ui_render_margin
-    echo "╚$(printf '═%.0s' $(seq 1 "$UI_WIDTH"))╝"
+    ui_render_styled border "$line"
+    printf '\n'
 }
 
 

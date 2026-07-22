@@ -1,0 +1,10 @@
+# Termux Neo built-in matrix palette.
+# The restrained green palette preserves the approved minimal UI.
+
+TERMUX_NEO_THEME_NAME="matrix"
+TERMUX_NEO_THEME_BORDER="32"
+TERMUX_NEO_THEME_TITLE="1;32"
+TERMUX_NEO_THEME_LABEL="1;32"
+TERMUX_NEO_THEME_VALUE="37"
+TERMUX_NEO_THEME_STATUS="32"
+TERMUX_NEO_THEME_PROMPT="1;32"

@@ -6,16 +6,16 @@
 
 ui_render_status_rule() {
     ui_render_margin
-    printf '%s\n' "$UI_STATUS_RULE"
+    ui_render_styled border "$UI_STATUS_RULE"
+    printf '\n'
 }
 
 ui_render_status_content() {
     ui_render_margin
 
-    printf '%*s%s%*s\n' \
-        "$UI_STATUS_PADDING_LEFT" "" \
-        "$UI_STATUS_TEXT" \
-        "$UI_STATUS_PADDING_RIGHT" ""
+    printf '%*s' "$UI_STATUS_PADDING_LEFT" ""
+    ui_render_styled status "$UI_STATUS_TEXT"
+    printf '%*s\n' "$UI_STATUS_PADDING_RIGHT" ""
 }
 
 ui_render_status() {

@@ -6,12 +6,14 @@
 
 ui_render_prompt_top() {
     ui_render_margin
-    printf '%s\n' "$UI_PROMPT_LINE_TOP"
+    ui_render_styled prompt "$UI_PROMPT_LINE_TOP"
+    printf '\n'
 }
 
 ui_render_prompt_bottom() {
     ui_render_margin
-    printf '%s\n' "$UI_PROMPT_LINE_BOTTOM"
+    ui_render_styled prompt "$UI_PROMPT_LINE_BOTTOM"
+    printf '\n'
 }
 
 ui_render_prompt() {

@@ -1,0 +1,10 @@
+# Termux Neo built-in neo palette.
+# Values are SGR parameters; escape bytes are added only by src/colors.sh.
+
+TERMUX_NEO_THEME_NAME="neo"
+TERMUX_NEO_THEME_BORDER="36"
+TERMUX_NEO_THEME_TITLE="1;35"
+TERMUX_NEO_THEME_LABEL="1;36"
+TERMUX_NEO_THEME_VALUE="37"
+TERMUX_NEO_THEME_STATUS="36"
+TERMUX_NEO_THEME_PROMPT="1;35"

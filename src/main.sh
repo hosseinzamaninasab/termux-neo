@@ -10,6 +10,7 @@ TERMUX_NEO_CONFIG_PATH="${TERMUX_NEO_CONFIG_PATH:-$PROJECT_ROOT/config/settings.
 # UI state, layout, and independent renderers.
 source "$SCRIPT_DIR/utils.sh"
 source "$SCRIPT_DIR/layout.sh"
+source "$SCRIPT_DIR/colors.sh"
 source "$SCRIPT_DIR/render.sh"
 source "$SCRIPT_DIR/dashboard.sh"
 source "$SCRIPT_DIR/status.sh"
@@ -79,8 +80,12 @@ termux_neo_prepare_state() {
     local prompt_path=""
 
     ui_init
+    termux_neo_color_reset
 
     termux_neo_config_load "$TERMUX_NEO_CONFIG_PATH" || return 1
+    termux_neo_color_configure \
+        "$TERMUX_NEO_CONFIG_THEME" \
+        "$TERMUX_NEO_CONFIG_COLOR_MODE" || return 1
 
     system_user="$(termux_neo_collect_value module_device_user "User")"
     display_user="$(
