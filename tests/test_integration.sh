@@ -12,10 +12,14 @@ fail() {
 capture_file="$CACHE_DIR/test-integration-output-$$"
 error_file="$CACHE_DIR/test-integration-error-$$"
 fake_bin="$CACHE_DIR/test-integration-bin-$$"
+test_config_path="$CACHE_DIR/test-integration-missing-config-$$"
+export TERMUX_NEO_CONFIG_PATH="$test_config_path"
+rm -f "$test_config_path"
 
 cleanup() {
     rm -f "$capture_file" "$error_file"
     rm -rf "$fake_bin"
+    rm -f "$test_config_path"
 }
 
 trap cleanup EXIT
@@ -231,8 +235,8 @@ cd "$original_pwd"
 
 output="$(cat "$capture_file")"
 
-[[ "$output" == *"USER      Bad User"* ]] ||
-    fail "Dashboard user fallback scenario mismatch"
+[[ "$output" == *"USER      User"* ]] ||
+    fail "Shared user fallback scenario mismatch"
 
 [[ "$output" == *"DEVICE    Android Device"* ]] ||
     fail "Device fallback missing"

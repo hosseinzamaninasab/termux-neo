@@ -3,6 +3,9 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+TERMUX_NEO_CONFIG_PATH="${TERMUX_NEO_CONFIG_PATH:-$PROJECT_ROOT/config/settings.conf}"
 
 # UI state, layout, and independent renderers.
 source "$SCRIPT_DIR/utils.sh"
@@ -11,6 +14,9 @@ source "$SCRIPT_DIR/render.sh"
 source "$SCRIPT_DIR/dashboard.sh"
 source "$SCRIPT_DIR/status.sh"
 source "$SCRIPT_DIR/prompt.sh"
+
+# Safe configuration boundary.
+source "$SCRIPT_DIR/config.sh"
 
 # Safe production data modules.
 source "$SCRIPT_DIR/modules/common.sh"
@@ -34,16 +40,32 @@ termux_neo_collect_value() {
     module_clean_value "$value" "$fallback"
 }
 
-termux_neo_prompt_user() {
+termux_neo_display_user() {
     local value=""
 
-    value="$(termux_neo_collect_value module_device_user "User")"
-
-    if [[ "$value" =~ ^[[:alnum:]_.-]+$ ]]; then
+    value="${TERMUX_NEO_USER-}"
+    if termux_neo_config_validate_display_user "$value"; then
         printf '%s' "$value"
-    else
-        printf 'User'
+        return 0
     fi
+
+    value="$TERMUX_NEO_CONFIG_DISPLAY_USER"
+    if termux_neo_config_validate_display_user "$value"; then
+        printf '%s' "$value"
+        return 0
+    fi
+
+    value="$(
+        TERMUX_NEO_USER= \
+            termux_neo_collect_value module_device_user "User"
+    )"
+
+    if termux_neo_config_validate_display_user "$value"; then
+        printf '%s' "$value"
+        return 0
+    fi
+
+    printf 'User'
 }
 
 termux_neo_prompt_path() {
@@ -72,8 +94,7 @@ termux_neo_prompt_path() {
 }
 
 termux_neo_prepare_state() {
-    local dashboard_user=""
-    local prompt_user=""
+    local display_user=""
     local device=""
     local system=""
     local network_type=""
@@ -86,34 +107,17 @@ termux_neo_prepare_state() {
 
     ui_init
 
-    dashboard_user="$(
-        termux_neo_collect_value module_device_user "User"
-    )"
-    prompt_user="$(termux_neo_prompt_user)"
-    device="$(
-        termux_neo_collect_value module_device_name "Android Device"
-    )"
-    system="$(
-        termux_neo_collect_value module_system_name "Android"
-    )"
-    network_type="$(
-        termux_neo_collect_value module_network_type "Offline"
-    )"
-    local_ip="$(
-        termux_neo_collect_value module_network_local_ip "Unavailable"
-    )"
-    network_state="$(
-        termux_neo_collect_value module_network_state "DOWN"
-    )"
-    vpn_state="$(
-        termux_neo_collect_value module_vpn_state "OFF"
-    )"
-    battery="$(
-        termux_neo_collect_value module_battery_value "--"
-    )"
-    time_value="$(
-        termux_neo_collect_value module_time_value "--:--"
-    )"
+    termux_neo_config_load "$TERMUX_NEO_CONFIG_PATH" || return 1
+
+    display_user="$(termux_neo_display_user)"
+    device="$(termux_neo_collect_value module_device_name "Android Device")"
+    system="$(termux_neo_collect_value module_system_name "Android")"
+    network_type="$(termux_neo_collect_value module_network_type "Offline")"
+    local_ip="$(termux_neo_collect_value module_network_local_ip "Unavailable")"
+    network_state="$(termux_neo_collect_value module_network_state "DOWN")"
+    vpn_state="$(termux_neo_collect_value module_vpn_state "OFF")"
+    battery="$(termux_neo_collect_value module_battery_value "--")"
+    time_value="$(termux_neo_collect_value module_time_value "--:--")"
     prompt_path="$(termux_neo_prompt_path)"
 
     case "$network_state" in
@@ -140,7 +144,7 @@ termux_neo_prepare_state() {
 
     ui_title "TERMUX NEO"
 
-    ui_add_row "USER" "$dashboard_user"
+    ui_add_row "USER" "$display_user"
     ui_add_row "DEVICE" "$device"
     ui_add_row "SYSTEM" "$system"
     ui_add_row "NETWORK" "$network_type"
@@ -151,34 +155,27 @@ termux_neo_prepare_state() {
     ui_add_status "BAT" "$battery"
     ui_add_status "TIME" "$time_value"
 
-    ui_set_prompt "$prompt_user" "$prompt_path"
+    ui_set_prompt "$display_user" "$prompt_path"
 }
 
 termux_neo_render_once() {
     local output=""
 
     termux_neo_prepare_state || return 1
-
-    # Dashboard layout must be established before Dashboard and Status.
     ui_calculate_width || return 1
     ui_calculate_margin || return 1
 
-    # Render all blocks in a subshell first. Nothing reaches the terminal
-    # unless Dashboard, Status, and Prompt all finish successfully.
     output="$(
         ui_render || exit 1
         printf '\n'
-
         ui_render_status || exit 1
         printf '\n'
-
         ui_render_prompt || exit 1
     )" || return 1
 
     printf '%s\n' "$output"
 }
 
-# Sourcing main.sh defines the production API without terminal output.
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     termux_neo_render_once
 fi
