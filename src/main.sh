@@ -19,6 +19,9 @@ source "$SCRIPT_DIR/prompt.sh"
 # Safe configuration boundary.
 source "$SCRIPT_DIR/config.sh"
 
+# Stable command parsing and dispatch boundary.
+source "$SCRIPT_DIR/cli.sh"
+
 # Safe production data modules.
 source "$SCRIPT_DIR/modules/common.sh"
 source "$SCRIPT_DIR/modules/device.sh"
@@ -83,6 +86,9 @@ termux_neo_prepare_state() {
     termux_neo_color_reset
 
     termux_neo_config_load "$TERMUX_NEO_CONFIG_PATH" || return 1
+    termux_neo_config_apply_runtime_overrides \
+        "${TERMUX_NEO_CLI_THEME_OVERRIDE-}" \
+        "${TERMUX_NEO_CLI_COLOR_MODE_OVERRIDE-}" || return 1
     termux_neo_color_configure \
         "$TERMUX_NEO_CONFIG_THEME" \
         "$TERMUX_NEO_CONFIG_COLOR_MODE" || return 1
@@ -160,5 +166,5 @@ termux_neo_render_once() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    termux_neo_render_once
+    termux_neo_cli_dispatch "$@"
 fi

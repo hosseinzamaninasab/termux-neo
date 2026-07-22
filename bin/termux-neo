@@ -5,4 +5,4 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-exec "$PROJECT_ROOT/src/main.sh"
+exec "$PROJECT_ROOT/src/main.sh" "$@"

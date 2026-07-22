@@ -109,6 +109,26 @@ termux_neo_config_resolve_display_user() {
     printf 'User'
 }
 
+termux_neo_config_apply_runtime_overrides() {
+    local theme_override="${1-}"
+    local color_mode_override="${2-}"
+    local effective_theme="$TERMUX_NEO_CONFIG_THEME"
+    local effective_color_mode="$TERMUX_NEO_CONFIG_COLOR_MODE"
+
+    if [[ -n "$theme_override" ]]; then
+        termux_neo_config_validate_theme "$theme_override" || return 1
+        effective_theme="$theme_override"
+    fi
+
+    if [[ -n "$color_mode_override" ]]; then
+        termux_neo_config_validate_color_mode "$color_mode_override" || return 1
+        effective_color_mode="$color_mode_override"
+    fi
+
+    TERMUX_NEO_CONFIG_THEME="$effective_theme"
+    TERMUX_NEO_CONFIG_COLOR_MODE="$effective_color_mode"
+}
+
 termux_neo_config_load() {
     local config_file="${1-}"
     local raw_line=""
