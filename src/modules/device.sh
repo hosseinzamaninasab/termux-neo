@@ -5,7 +5,7 @@
 # ==========================================================
 
 module_device_user() {
-    local value="${TERMUX_NEO_USER:-${USER:-}}"
+    local value="${USER:-}"
 
     if [[ -z "$value" ]] && module_command_exists id; then
         value="$(id -un 2>/dev/null || true)"

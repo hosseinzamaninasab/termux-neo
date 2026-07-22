@@ -24,6 +24,12 @@ CONFIG
 termux_neo_config_load "$fixture/valid.conf" || fail "valid config rejected"
 [[ "$TERMUX_NEO_CONFIG_DISPLAY_USER" == "Zoro" ]] || fail "configured user mismatch"
 
+resolved="$(termux_neo_config_resolve_display_user "Neo" "u0_a191")"
+[[ "$resolved" == "Neo" ]] || fail "valid override did not win"
+
+resolved="$(termux_neo_config_resolve_display_user "Bad User" "u0_a191")"
+[[ "$resolved" == "Zoro" ]] || fail "invalid override bypassed config"
+
 printf 'display_user=\n' > "$fixture/empty.conf"
 printf 'display_user=Bad User\n' > "$fixture/space.conf"
 printf 'display_user=Bad•User\n' > "$fixture/bullet.conf"
@@ -39,6 +45,13 @@ for name in empty space bullet unknown duplicate multiline tab cr escape; do
         fail "invalid config accepted: $name"
     fi
 done
+
+termux_neo_config_load "$fixture/missing.conf" || fail "missing config rejected"
+resolved="$(termux_neo_config_resolve_display_user "" "u0_a191")"
+[[ "$resolved" == "u0_a191" ]] || fail "system user fallback mismatch"
+
+resolved="$(termux_neo_config_resolve_display_user "" "Bad User")"
+[[ "$resolved" == "User" ]] || fail "hard fallback mismatch"
 
 marker="$fixture/executed"
 cat > "$fixture/command.conf" <<CONFIG

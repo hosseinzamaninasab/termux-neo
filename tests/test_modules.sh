@@ -62,6 +62,11 @@ run_silent() {
 }
 
 user_value="$(run_silent module_device_user)"
+
+isolated_user="$(TERMUX_NEO_USER=Neo USER=u0_a191 module_device_user)"
+[[ "$isolated_user" == "u0_a191" ]] ||
+    fail "device module consumed display override"
+
 device_value="$(run_silent module_device_name)"
 system_value="$(run_silent module_system_name)"
 network_state="$(run_silent module_network_state)"

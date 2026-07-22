@@ -32,6 +32,27 @@ termux_neo_config_validate_display_user() {
     [[ "$value" != *"•"* ]] || return 1
 }
 
+termux_neo_config_resolve_display_user() {
+    local override_value="${1-}"
+    local system_value="${2-}"
+    local value=""
+
+    # This boundary owns the full precedence policy. Collectors only provide
+    # raw candidates; renderers only consume the single resolved value.
+    for value in \
+        "$override_value" \
+        "$TERMUX_NEO_CONFIG_DISPLAY_USER" \
+        "$system_value"
+    do
+        if termux_neo_config_validate_display_user "$value"; then
+            printf '%s' "$value"
+            return 0
+        fi
+    done
+
+    printf 'User'
+}
+
 termux_neo_config_load() {
     local config_file="${1-}"
     local raw_line=""

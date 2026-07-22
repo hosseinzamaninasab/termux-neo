@@ -40,34 +40,6 @@ termux_neo_collect_value() {
     module_clean_value "$value" "$fallback"
 }
 
-termux_neo_display_user() {
-    local value=""
-
-    value="${TERMUX_NEO_USER-}"
-    if termux_neo_config_validate_display_user "$value"; then
-        printf '%s' "$value"
-        return 0
-    fi
-
-    value="$TERMUX_NEO_CONFIG_DISPLAY_USER"
-    if termux_neo_config_validate_display_user "$value"; then
-        printf '%s' "$value"
-        return 0
-    fi
-
-    value="$(
-        TERMUX_NEO_USER= \
-            termux_neo_collect_value module_device_user "User"
-    )"
-
-    if termux_neo_config_validate_display_user "$value"; then
-        printf '%s' "$value"
-        return 0
-    fi
-
-    printf 'User'
-}
-
 termux_neo_prompt_path() {
     local path="${PWD:-}"
     local home_path="${HOME:-}"
@@ -95,6 +67,7 @@ termux_neo_prompt_path() {
 
 termux_neo_prepare_state() {
     local display_user=""
+    local system_user=""
     local device=""
     local system=""
     local network_type=""
@@ -109,7 +82,12 @@ termux_neo_prepare_state() {
 
     termux_neo_config_load "$TERMUX_NEO_CONFIG_PATH" || return 1
 
-    display_user="$(termux_neo_display_user)"
+    system_user="$(termux_neo_collect_value module_device_user "User")"
+    display_user="$(
+        termux_neo_config_resolve_display_user \
+            "${TERMUX_NEO_USER-}" \
+            "$system_user"
+    )"
     device="$(termux_neo_collect_value module_device_name "Android Device")"
     system="$(termux_neo_collect_value module_system_name "Android")"
     network_type="$(termux_neo_collect_value module_network_type "Offline")"
