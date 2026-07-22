@@ -12,6 +12,7 @@ shell prompt, starts a daemon, or creates a background refresh loop.
 | `termux-neo --version` | Print the version from `VERSION` without probing the device or rendering UI. |
 | `termux-neo --diagnose` | Print the privacy-safe built-in diagnostics report and exit. |
 | `termux-neo --config` | Print the active configuration path without reading or changing the file. |
+| `termux-neo --startup` | Make the Bash startup hook match the saved `startup_integration` setting. |
 | `termux-neo --theme NAME` | Render once with the `neo` or `matrix` theme, without saving the override. |
 | `termux-neo --no-color` | Render once with ANSI color disabled, without changing the saved color mode. |
 
@@ -36,8 +37,28 @@ optional-command availability, selected network/battery sources, and safe module
 values. It never dumps the environment, reads secrets, calls UI renderers, or
 emits ANSI color. A valid or missing configuration returns status 0; an invalid
 configuration path, invalid configuration, or unavailable application version
-returns status 1 after a complete report. No CLI path changes `PS1`, installs
-startup integration, or starts a background process.
+returns status 1 after a complete report. The startup command is the only CLI
+path allowed to edit a shell startup file. It never changes `PS1` or starts a
+background process.
+
+## Optional Bash startup integration
+
+Startup integration is disabled by default. To enable it, set
+`startup_integration=true` in the active settings file, then run:
+
+```bash
+termux-neo --startup
+```
+
+The command validates the complete settings file before editing `~/.bashrc`,
+creates a backup before each real edit, and installs one uniquely marked block.
+Running it again is idempotent. The block runs Termux Neo once only when Bash
+is interactive; it does not own or modify the shell prompt.
+
+To remove the managed block, set `startup_integration=false` and run the same
+command again. Removal targets only the exact marked block. Incomplete or
+duplicate markers fail without changing the startup file. Only Bash is
+supported at this checkpoint; no other shell startup file is modified.
 
 ## Diagnostics fields
 

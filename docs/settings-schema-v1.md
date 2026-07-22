@@ -19,10 +19,11 @@ it never sources or evaluates configuration as shell code.
 | `display_user` | empty | 1–28 letters, numbers, `_`, `.`, `-` | Used by Dashboard and Prompt after precedence resolution. |
 | `theme` | `neo` | `neo`, `matrix` | Selects a built-in semantic color palette. |
 | `color_mode` | `auto` | `auto`, `always`, `never` | Controls ANSI color output. |
-| `startup_integration` | `false` | `true`, `false` | Reserved for activation in Task 19. |
+| `startup_integration` | `false` | `true`, `false` | Selects whether `termux-neo --startup` installs or removes the Bash startup hook. |
 
-`startup_integration` is validated and stored by the configuration boundary,
-but it does not change runtime behavior before Task 19.
+Changing `startup_integration` never edits a shell file by itself. Run
+`termux-neo --startup` to explicitly apply the saved preference. This keeps
+normal rendering, diagnostics, and configuration loading side-effect free.
 
 ## Themes and color modes
 

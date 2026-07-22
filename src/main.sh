@@ -19,6 +19,9 @@ source "$SCRIPT_DIR/prompt.sh"
 # Safe configuration boundary.
 source "$SCRIPT_DIR/config.sh"
 
+# Explicit, reversible Bash startup integration boundary.
+source "$SCRIPT_DIR/startup_integration.sh"
+
 # Stable command parsing and dispatch boundary.
 source "$SCRIPT_DIR/cli.sh"
 

@@ -63,10 +63,12 @@ grep -Fq 'Usage: termux-neo [OPTION]' "$stdout_file" ||
     fail "help usage is missing"
 grep -Fq -- '--theme NAME' "$stdout_file" ||
     fail "help theme command is missing"
+grep -Fq -- '--startup' "$stdout_file" ||
+    fail "help startup command is missing"
 [[ ! -s "$stderr_file" ]] || fail "help produced stderr"
 
 run_cli 0 --version
-[[ "$(cat "$stdout_file")" == "termux-neo 0.2.0-alpha" ]] ||
+[[ "$(cat "$stdout_file")" == "termux-neo 0.3.0-alpha" ]] ||
     fail "version output mismatch"
 [[ ! -s "$stderr_file" ]] || fail "version produced stderr"
 
@@ -87,6 +89,19 @@ run_cli 1 --config
     fail "help, version, or config command probed device data"
 (( render_count == 0 )) ||
     fail "help, version, or config command invoked the renderer"
+
+startup_count=0
+termux_neo_startup_sync() {
+    (( startup_count += 1 ))
+    printf 'startup\n'
+}
+
+run_cli 0 --startup
+[[ "$(cat "$stdout_file")" == "startup" ]] ||
+    fail "startup command did not enter the stable hook"
+[[ ! -s "$stderr_file" ]] || fail "startup command produced stderr"
+(( startup_count == 1 )) || fail "startup hook count mismatch"
+(( render_count == 0 )) || fail "startup command invoked the renderer"
 
 diagnostic_count=0
 termux_neo_diagnose() {
@@ -121,6 +136,7 @@ for invalid_case in \
     "--version extra" \
     "--diagnose extra" \
     "--config extra" \
+    "--startup extra" \
     "--theme" \
     "--theme cyber" \
     "--theme neo extra" \
@@ -135,6 +151,7 @@ do
 done
 
 (( render_count == 3 )) || fail "invalid command invoked the renderer"
+(( startup_count == 1 )) || fail "invalid command invoked the startup hook"
 [[ ! -s "$probe_file" ]] || fail "CLI unit paths probed device data"
 
 grep -Fqx 'exec "$PROJECT_ROOT/src/main.sh" "$@"' bin/termux-neo ||

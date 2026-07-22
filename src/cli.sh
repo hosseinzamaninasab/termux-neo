@@ -27,6 +27,7 @@ termux_neo_cli_help() {
         '  --version       Show the application version and exit' \
         '  --diagnose      Run built-in diagnostics and exit' \
         '  --config        Print the active configuration path and exit' \
+        '  --startup       Sync the Bash startup hook to saved settings' \
         '  --theme NAME    Render once with theme neo or matrix' \
         '  --no-color      Render once without ANSI color' \
         '' \
@@ -120,6 +121,13 @@ termux_neo_cli_dispatch() {
                 return "$TERMUX_NEO_CLI_USAGE_STATUS"
             fi
             termux_neo_cli_config_path
+            ;;
+        --startup)
+            if (( $# != 1 )); then
+                termux_neo_cli_error "--startup does not accept additional arguments"
+                return "$TERMUX_NEO_CLI_USAGE_STATUS"
+            fi
+            termux_neo_startup_sync
             ;;
         --theme)
             if (( $# != 2 )); then
