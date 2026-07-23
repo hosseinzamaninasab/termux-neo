@@ -31,5 +31,6 @@ feature remains an explicit user action through the saved setting and:
 termux-neo --startup
 ```
 
-Task 20 defines installation only. Update and uninstall behavior remain owned
-by their later lifecycle tasks.
+Updates are performed separately from a complete target source tree with
+`bash update.sh`; see [update.md](update.md). Uninstall behavior remains owned
+by its later lifecycle task.

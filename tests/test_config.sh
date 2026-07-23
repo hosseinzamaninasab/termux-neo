@@ -32,15 +32,21 @@ source src/config.sh
 
 termux_neo_config_reset
 assert_defaults
+[[ "$TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION" == "1" ]] ||
+    fail "source schema reset mismatch"
 
 termux_neo_config_load "$fixture/missing.conf" ||
     fail "missing config rejected"
 assert_defaults
+[[ "$TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION" == "1" ]] ||
+    fail "missing config source schema mismatch"
 
 printf '' > "$fixture/empty-file.conf"
 termux_neo_config_load "$fixture/empty-file.conf" ||
     fail "empty config rejected"
 assert_defaults
+[[ "$TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION" == "0" ]] ||
+    fail "empty legacy config source schema mismatch"
 
 cat > "$fixture/valid.conf" <<'CONFIG'
 # Versioned settings contract
@@ -53,6 +59,8 @@ CONFIG
 
 termux_neo_config_load "$fixture/valid.conf" || fail "valid schema rejected"
 [[ "$TERMUX_NEO_CONFIG_SCHEMA_VERSION" == "1" ]] || fail "schema mismatch"
+[[ "$TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION" == "1" ]] ||
+    fail "source schema mismatch"
 [[ "$TERMUX_NEO_CONFIG_DISPLAY_USER" == "Zoro" ]] || fail "user mismatch"
 [[ "$TERMUX_NEO_CONFIG_THEME" == "matrix" ]] || fail "theme mismatch"
 [[ "$TERMUX_NEO_CONFIG_COLOR_MODE" == "never" ]] || fail "color mismatch"
@@ -79,6 +87,8 @@ printf 'display_user=Zoro\n' > "$fixture/legacy.conf"
 termux_neo_config_load "$fixture/legacy.conf" || fail "legacy schema rejected"
 [[ "$TERMUX_NEO_CONFIG_SCHEMA_VERSION" == "1" ]] ||
     fail "legacy schema was not migrated"
+[[ "$TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION" == "0" ]] ||
+    fail "legacy source schema was not exposed"
 [[ "$TERMUX_NEO_CONFIG_DISPLAY_USER" == "Zoro" ]] ||
     fail "legacy display user mismatch"
 [[ "$TERMUX_NEO_CONFIG_THEME" == "neo" ]] || fail "legacy theme default"
@@ -86,6 +96,25 @@ termux_neo_config_load "$fixture/legacy.conf" || fail "legacy schema rejected"
     fail "legacy color default"
 [[ "$TERMUX_NEO_CONFIG_STARTUP_INTEGRATION" == "false" ]] ||
     fail "legacy startup default"
+
+termux_neo_config_write_current "$fixture/migrated.conf" ||
+    fail "legacy schema could not be serialized"
+grep -Fqx 'schema_version=1' "$fixture/migrated.conf" ||
+    fail "serialized schema version is missing"
+grep -Fqx 'display_user=Zoro' "$fixture/migrated.conf" ||
+    fail "serialized display user mismatch"
+grep -Fqx 'theme=neo' "$fixture/migrated.conf" ||
+    fail "serialized theme default mismatch"
+grep -Fqx 'color_mode=auto' "$fixture/migrated.conf" ||
+    fail "serialized color default mismatch"
+grep -Fqx 'startup_integration=false' "$fixture/migrated.conf" ||
+    fail "serialized startup default mismatch"
+termux_neo_config_load "$fixture/migrated.conf" ||
+    fail "serialized schema could not be reloaded"
+[[ "$TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION" == "1" ]] ||
+    fail "serialized schema did not become current"
+[[ "$TERMUX_NEO_CONFIG_DISPLAY_USER" == "Zoro" ]] ||
+    fail "serialized display user did not round-trip"
 
 printf 'display_user=\n' > "$fixture/empty-value.conf"
 printf 'display_user=Bad User\n' > "$fixture/space.conf"

@@ -13,6 +13,7 @@ TERMUX_NEO_DEFAULT_COLOR_MODE="auto"
 TERMUX_NEO_DEFAULT_STARTUP_INTEGRATION="false"
 
 TERMUX_NEO_CONFIG_SCHEMA_VERSION="$TERMUX_NEO_SETTINGS_SCHEMA_CURRENT"
+TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION="$TERMUX_NEO_SETTINGS_SCHEMA_CURRENT"
 TERMUX_NEO_CONFIG_DISPLAY_USER="$TERMUX_NEO_DEFAULT_DISPLAY_USER"
 TERMUX_NEO_CONFIG_THEME="$TERMUX_NEO_DEFAULT_THEME"
 TERMUX_NEO_CONFIG_COLOR_MODE="$TERMUX_NEO_DEFAULT_COLOR_MODE"
@@ -20,6 +21,7 @@ TERMUX_NEO_CONFIG_STARTUP_INTEGRATION="$TERMUX_NEO_DEFAULT_STARTUP_INTEGRATION"
 
 termux_neo_config_reset() {
     TERMUX_NEO_CONFIG_SCHEMA_VERSION="$TERMUX_NEO_SETTINGS_SCHEMA_CURRENT"
+    TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION="$TERMUX_NEO_SETTINGS_SCHEMA_CURRENT"
     TERMUX_NEO_CONFIG_DISPLAY_USER="$TERMUX_NEO_DEFAULT_DISPLAY_USER"
     TERMUX_NEO_CONFIG_THEME="$TERMUX_NEO_DEFAULT_THEME"
     TERMUX_NEO_CONFIG_COLOR_MODE="$TERMUX_NEO_DEFAULT_COLOR_MODE"
@@ -222,8 +224,46 @@ termux_neo_config_load() {
     # Commit parsed values only after the whole file and migration path pass.
     # Invalid files therefore leave the safe defaults installed by reset.
     TERMUX_NEO_CONFIG_SCHEMA_VERSION="$migrated_schema_version"
+    TERMUX_NEO_CONFIG_SOURCE_SCHEMA_VERSION="$source_schema_version"
     TERMUX_NEO_CONFIG_DISPLAY_USER="$parsed_display_user"
     TERMUX_NEO_CONFIG_THEME="$parsed_theme"
     TERMUX_NEO_CONFIG_COLOR_MODE="$parsed_color_mode"
     TERMUX_NEO_CONFIG_STARTUP_INTEGRATION="$parsed_startup_integration"
+}
+
+termux_neo_config_write_current() {
+    local output_file="${1-}"
+
+    [[ -n "$output_file" ]] || return 1
+    [[ "$output_file" != *$'\n'* ]] || return 1
+    [[ "$output_file" != *$'\r'* ]] || return 1
+    [[ "$output_file" != *$'\t'* ]] || return 1
+    [[ "$output_file" != *$'\e'* ]] || return 1
+
+    termux_neo_config_validate_schema_version \
+        "$TERMUX_NEO_CONFIG_SCHEMA_VERSION" || return 1
+    if [[ -n "$TERMUX_NEO_CONFIG_DISPLAY_USER" ]]; then
+        termux_neo_config_validate_display_user \
+            "$TERMUX_NEO_CONFIG_DISPLAY_USER" || return 1
+    fi
+    termux_neo_config_validate_theme "$TERMUX_NEO_CONFIG_THEME" || return 1
+    termux_neo_config_validate_color_mode \
+        "$TERMUX_NEO_CONFIG_COLOR_MODE" || return 1
+    termux_neo_config_validate_startup_integration \
+        "$TERMUX_NEO_CONFIG_STARTUP_INTEGRATION" || return 1
+
+    {
+        printf '%s\n' \
+            '# Termux Neo settings schema v1' \
+            '#' \
+            '# Migrated by the Termux Neo update transaction.' \
+            "schema_version=$TERMUX_NEO_CONFIG_SCHEMA_VERSION"
+        if [[ -n "$TERMUX_NEO_CONFIG_DISPLAY_USER" ]]; then
+            printf 'display_user=%s\n' "$TERMUX_NEO_CONFIG_DISPLAY_USER"
+        fi
+        printf '%s\n' \
+            "theme=$TERMUX_NEO_CONFIG_THEME" \
+            "color_mode=$TERMUX_NEO_CONFIG_COLOR_MODE" \
+            "startup_integration=$TERMUX_NEO_CONFIG_STARTUP_INTEGRATION"
+    } > "$output_file"
 }
