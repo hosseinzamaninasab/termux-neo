@@ -67,6 +67,8 @@ grep -Fqx 'startup integration: unchanged' "$stdout_file" ||
     fail "installed update documentation is missing"
 [[ -f "$runtime_root/docs/uninstallation.md" ]] ||
     fail "installed uninstallation documentation is missing"
+[[ -f "$runtime_root/docs/release-artifacts.md" ]] ||
+    fail "installed release artifact documentation is missing"
 grep -Fqx 'format=1' "$runtime_root/INSTALL_MANIFEST" ||
     fail "installation manifest format is missing"
 grep -Fqx 'product=termux-neo' "$runtime_root/INSTALL_MANIFEST" ||
@@ -76,7 +78,7 @@ cmp -s config/settings.example.conf "$config_path" ||
     fail "first install did not create settings from the example"
 [[ "$(stat -c '%a' "$config_path")" == "600" ]] ||
     fail "new user settings mode is not 600"
-[[ "$($command_path --version)" == "termux-neo 0.3.0-alpha" ]] ||
+[[ "$($command_path --version)" == "termux-neo 0.5.0-beta" ]] ||
     fail "installed version command failed"
 [[ "$(HOME="$test_home" $command_path --config)" == "$config_path" ]] ||
     fail "installed launcher did not select the user settings path"

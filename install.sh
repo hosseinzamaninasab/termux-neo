@@ -122,11 +122,13 @@ termux_neo_install_validate_source() {
         "$SOURCE_ROOT/config/settings.example.conf" \
         "$SOURCE_ROOT/docs/cli.md" \
         "$SOURCE_ROOT/docs/installation.md" \
+        "$SOURCE_ROOT/docs/release-artifacts.md" \
         "$SOURCE_ROOT/docs/settings-schema-v1.md" \
         "$SOURCE_ROOT/docs/update.md" \
         "$SOURCE_ROOT/docs/uninstallation.md" \
         "$SOURCE_ROOT/src/main.sh" \
         "$SOURCE_ROOT/src/config.sh" \
+        "$SOURCE_ROOT/src/release.sh" \
         "$SOURCE_ROOT/src/startup_integration.sh"
     do
         [[ -f "$required_path" && -r "$required_path" ]] || {
@@ -140,6 +142,11 @@ termux_neo_install_validate_source() {
         termux_neo_install_error "VERSION is invalid"
         return 1
     }
+
+    bash -n "$SOURCE_ROOT/src/release.sh" || return 1
+    source "$SOURCE_ROOT/src/release.sh"
+    termux_neo_release_manifest_verify \
+        "$SOURCE_ROOT" termux_neo_install_error || return 1
 
     while IFS= read -r -d '' shell_file; do
         bash -n "$shell_file" || {
@@ -284,6 +291,7 @@ termux_neo_install_prepare_runtime() {
     cp -p "$SOURCE_ROOT/bin/termux-neo" "$STAGE_RUNTIME/bin/"
     cp -p "$SOURCE_ROOT/config/settings.example.conf" "$STAGE_RUNTIME/config/"
     cp -p "$SOURCE_ROOT/docs/cli.md" "$SOURCE_ROOT/docs/installation.md" \
+        "$SOURCE_ROOT/docs/release-artifacts.md" \
         "$SOURCE_ROOT/docs/settings-schema-v1.md" "$SOURCE_ROOT/docs/update.md" \
         "$SOURCE_ROOT/docs/uninstallation.md" \
         "$STAGE_RUNTIME/docs/"

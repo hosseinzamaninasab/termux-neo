@@ -5,7 +5,7 @@ require root, replace the shell prompt, start a daemon, or run a refresh loop.
 
 ## Install
 
-From a complete source tree:
+From a complete source tree or a verified extracted release archive:
 
 ```bash
 bash install.sh
@@ -13,6 +13,10 @@ bash install.sh
 
 The production layout, rollback behavior, configuration-preservation contract,
 and supported paths are documented in [docs/installation.md](docs/installation.md).
+Published archives install without Git or branch state. Checksum verification,
+the internal file manifest, exact local-archive commands, and the reproducible
+packaging command are documented in
+[docs/release-artifacts.md](docs/release-artifacts.md).
 
 After installation:
 

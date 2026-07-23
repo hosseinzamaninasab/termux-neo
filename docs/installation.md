@@ -1,10 +1,18 @@
 # Production Installation
 
-Run the installer from a complete Termux Neo source tree:
+Run the installer from a complete Termux Neo source tree or from a verified,
+extracted release archive:
 
 ```bash
 bash install.sh
 ```
+
+A published archive does not require Git or branch selection. Verify its
+external checksum and complete internal file manifest before installation.
+Exact local-archive commands and the reproducible packaging command are in
+[release-artifacts.md](release-artifacts.md). When the internal manifest is
+present, the installer validates it again automatically before any installed
+path changes.
 
 The installer does not require root and writes only these owned locations:
 
