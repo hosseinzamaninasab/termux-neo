@@ -32,5 +32,8 @@ termux-neo --startup
 ```
 
 Updates are performed separately from a complete target source tree with
-`bash update.sh`; see [update.md](update.md). Uninstall behavior remains owned
-by its later lifecycle task.
+`bash update.sh`; see [update.md](update.md).
+
+Safe removal is performed from a complete source tree with
+`bash uninstall.sh`; see [uninstallation.md](uninstallation.md). User settings
+are preserved unless `--remove-config` is explicit.

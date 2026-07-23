@@ -65,6 +65,8 @@ grep -Fqx 'startup integration: unchanged' "$stdout_file" ||
     fail "installation manifest is missing"
 [[ -f "$runtime_root/docs/update.md" ]] ||
     fail "installed update documentation is missing"
+[[ -f "$runtime_root/docs/uninstallation.md" ]] ||
+    fail "installed uninstallation documentation is missing"
 grep -Fqx 'format=1' "$runtime_root/INSTALL_MANIFEST" ||
     fail "installation manifest format is missing"
 grep -Fqx 'product=termux-neo' "$runtime_root/INSTALL_MANIFEST" ||

@@ -28,10 +28,12 @@ make_target() {
     local target_version="${2-}"
 
     mkdir -p "$target_dir"
-    cp -p VERSION LICENSE README.md install.sh update.sh "$target_dir/"
+    cp -p VERSION LICENSE README.md install.sh update.sh uninstall.sh \
+        "$target_dir/"
     cp -pR bin config docs src "$target_dir/"
     printf '%s\n' "$target_version" > "$target_dir/VERSION"
-    chmod 755 "$target_dir/install.sh" "$target_dir/update.sh"
+    chmod 755 "$target_dir/install.sh" "$target_dir/update.sh" \
+        "$target_dir/uninstall.sh"
     [[ ! -e "$target_dir/.git" ]] ||
         fail "target fixture unexpectedly contains Git metadata"
 }
@@ -108,6 +110,8 @@ grep -Fqx 'version=0.4.0-alpha' "$runtime_root/INSTALL_MANIFEST" ||
     fail "updated ownership manifest version mismatch"
 [[ -f "$runtime_root/docs/update.md" ]] ||
     fail "update documentation was not installed"
+[[ -f "$runtime_root/docs/uninstallation.md" ]] ||
+    fail "uninstallation documentation was not installed"
 cmp -s "$config_path" "$fixture/settings-before-upgrade" ||
     fail "upgrade changed schema v1 settings bytes"
 [[ "$(stat -c '%a' "$config_path")" == "640" ]] ||

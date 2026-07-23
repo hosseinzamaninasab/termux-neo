@@ -46,3 +46,24 @@ failure. Downgrades are rejected unless `--force-downgrade` is explicit.
 
 The complete update contract and report location are documented in
 [docs/update.md](docs/update.md).
+
+## Uninstall
+
+Remove the owned runtime, stable launcher, and optional Bash startup block
+while preserving user settings:
+
+```bash
+bash uninstall.sh
+```
+
+Configuration removal is a separate, explicit action:
+
+```bash
+bash uninstall.sh --remove-config
+```
+
+The uninstaller validates ownership before changing any installed path, keeps
+rollback points until removal commits, and never restores an ambiguous
+historical shell backup over later user edits. The complete contract and
+report location are documented in
+[docs/uninstallation.md](docs/uninstallation.md).

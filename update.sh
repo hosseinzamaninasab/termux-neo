@@ -354,12 +354,14 @@ termux_neo_update_validate_source() {
         "$SOURCE_ROOT/README.md" \
         "$SOURCE_ROOT/install.sh" \
         "$SOURCE_ROOT/update.sh" \
+        "$SOURCE_ROOT/uninstall.sh" \
         "$SOURCE_ROOT/bin/termux-neo" \
         "$SOURCE_ROOT/config/settings.example.conf" \
         "$SOURCE_ROOT/docs/cli.md" \
         "$SOURCE_ROOT/docs/installation.md" \
         "$SOURCE_ROOT/docs/settings-schema-v1.md" \
         "$SOURCE_ROOT/docs/update.md" \
+        "$SOURCE_ROOT/docs/uninstallation.md" \
         "$SOURCE_ROOT/src/main.sh" \
         "$SOURCE_ROOT/src/config.sh" \
         "$SOURCE_ROOT/src/startup_integration.sh"
@@ -387,7 +389,8 @@ termux_neo_update_validate_source() {
         find "$SOURCE_ROOT/src" "$SOURCE_ROOT/bin" -type f \
             \( -name '*.sh' -o -name 'termux-neo' \) -print0
     )
-    bash -n "$SOURCE_ROOT/install.sh" "$SOURCE_ROOT/update.sh" || {
+    bash -n "$SOURCE_ROOT/install.sh" "$SOURCE_ROOT/update.sh" \
+        "$SOURCE_ROOT/uninstall.sh" || {
         termux_neo_update_error "target lifecycle shell syntax check failed"
         return 1
     }
@@ -651,7 +654,9 @@ termux_neo_update_prepare_runtime() {
         "$STAGE_RUNTIME/config/" || return 1
     cp -p "$SOURCE_ROOT/docs/cli.md" "$SOURCE_ROOT/docs/installation.md" \
         "$SOURCE_ROOT/docs/settings-schema-v1.md" \
-        "$SOURCE_ROOT/docs/update.md" "$STAGE_RUNTIME/docs/" || return 1
+        "$SOURCE_ROOT/docs/update.md" \
+        "$SOURCE_ROOT/docs/uninstallation.md" \
+        "$STAGE_RUNTIME/docs/" || return 1
     cp -pR "$SOURCE_ROOT/src" "$STAGE_RUNTIME/" || return 1
 
     printf '%s\n' \
