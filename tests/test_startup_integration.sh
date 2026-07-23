@@ -36,8 +36,8 @@ source_output="$(bash -c 'source src/main.sh')" ||
 
 source src/main.sh
 
-cat > "$fake_command" <<'MOCK'
-#!/data/data/com.termux/files/usr/bin/bash
+printf '#!%s\n' "$(command -v bash)" > "$fake_command"
+cat >> "$fake_command" <<'MOCK'
 printf 'started\n' >> "$STARTUP_PROBE_FILE"
 printf 'startup-rendered\n'
 MOCK

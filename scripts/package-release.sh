@@ -100,7 +100,7 @@ REPORT_FILE="$OUTPUT_DIR/$report_name"
 
 for required_path in \
     VERSION LICENSE README.md install.sh update.sh uninstall.sh \
-    bin config docs src scripts/package-release.sh
+    bin config docs src scripts/package-release.sh scripts/smoke-release.sh
 do
     [[ -e "$SOURCE_ROOT/$required_path" &&
        ! -L "$SOURCE_ROOT/$required_path" ]] ||
@@ -120,6 +120,7 @@ unexpected_link="$(
         "$SOURCE_ROOT/docs" \
         "$SOURCE_ROOT/src" \
         "$SOURCE_ROOT/scripts/package-release.sh" \
+        "$SOURCE_ROOT/scripts/smoke-release.sh" \
         -type l -print -quit
 )" || release_fail "package source could not be inspected"
 [[ -z "$unexpected_link" ]] ||
@@ -147,6 +148,7 @@ for shell_file in \
     "$SOURCE_ROOT/update.sh" \
     "$SOURCE_ROOT/uninstall.sh" \
     "$SOURCE_ROOT/scripts/package-release.sh" \
+    "$SOURCE_ROOT/scripts/smoke-release.sh" \
     "$SOURCE_ROOT"/src/*.sh \
     "$SOURCE_ROOT"/src/modules/*.sh \
     "$SOURCE_ROOT/bin/termux-neo"
@@ -178,7 +180,10 @@ cp -pR \
     "$SOURCE_ROOT/docs" \
     "$SOURCE_ROOT/src" \
     "$package_root/"
-cp -p "$SOURCE_ROOT/scripts/package-release.sh" "$package_root/scripts/"
+cp -p \
+    "$SOURCE_ROOT/scripts/package-release.sh" \
+    "$SOURCE_ROOT/scripts/smoke-release.sh" \
+    "$package_root/scripts/"
 
 find "$package_root" -type d -exec chmod 755 {} +
 find "$package_root" -type f -exec chmod 644 {} +
@@ -187,6 +192,7 @@ chmod 755 \
     "$package_root/update.sh" \
     "$package_root/uninstall.sh" \
     "$package_root/scripts/package-release.sh" \
+    "$package_root/scripts/smoke-release.sh" \
     "$package_root/bin/termux-neo" \
     "$package_root"/src/*.sh \
     "$package_root"/src/modules/*.sh
@@ -226,6 +232,8 @@ tar --extract --gzip --same-permissions \
     release_fail "archive root is invalid"
 termux_neo_release_manifest_verify "$verify_root/$package_name" release_error ||
     release_fail "archive release manifest verification failed"
+bash "$verify_root/$package_name/scripts/smoke-release.sh" ||
+    release_fail "archive smoke verification failed"
 
 archive_checksum="$(sha256sum -- "$archive_temp")"
 archive_checksum="${archive_checksum%% *}"

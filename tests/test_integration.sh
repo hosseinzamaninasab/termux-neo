@@ -12,13 +12,14 @@ fail() {
 capture_file="$CACHE_DIR/test-integration-output-$$"
 error_file="$CACHE_DIR/test-integration-error-$$"
 fake_bin="$CACHE_DIR/test-integration-bin-$$"
+entry_root="$CACHE_DIR/test-integration-entry-$$"
 test_config_path="$CACHE_DIR/test-integration-missing-config-$$"
 export TERMUX_NEO_CONFIG_PATH="$test_config_path"
 rm -f "$test_config_path"
 
 cleanup() {
     rm -f "$capture_file" "$error_file"
-    rm -rf "$fake_bin"
+    rm -rf "$fake_bin" "$entry_root"
     rm -f "$test_config_path"
 }
 
@@ -278,9 +279,19 @@ fi
 # ----------------------------------------------------------
 
 mkdir -p "$fake_bin"
+mkdir -p "$entry_root"
+cp -pR bin src "$entry_root/"
 
-cat > "$fake_bin/tput" <<'MOCK'
-#!/data/data/com.termux/files/usr/bin/bash
+# The product shebang intentionally names Termux Bash. Adapt only the copied
+# entry target so the same launcher path can be exercised on a portable host.
+{
+    printf '#!%s\n' "$(command -v bash)"
+    tail -n +2 src/main.sh
+} > "$entry_root/src/main.sh"
+chmod 755 "$entry_root/src/main.sh"
+
+printf '#!%s\n' "$(command -v bash)" > "$fake_bin/tput"
+cat >> "$fake_bin/tput" <<'MOCK'
 if [[ "${1-}" == "cols" ]]; then
     printf '56'
     exit 0
@@ -293,7 +304,7 @@ chmod 755 "$fake_bin/tput"
 rm -f "$capture_file" "$error_file"
 
 PATH="$fake_bin:$PATH" \
-    bash bin/termux-neo > "$capture_file" 2> "$error_file" ||
+    bash "$entry_root/bin/termux-neo" > "$capture_file" 2> "$error_file" ||
     fail "bin/termux-neo did not invoke the production flow"
 
 [[ ! -s "$error_file" ]] ||

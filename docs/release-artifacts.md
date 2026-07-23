@@ -29,6 +29,9 @@ termux-neo-0.5.0-beta-release-report.txt
 The archive is reproducible: file order, timestamps, ownership metadata, and
 gzip metadata are normalized. The report is mode `0600`; the archive and
 checksum file are mode `0644`. Existing artifacts are never overwritten.
+Before publication, the builder extracts the archive, validates its internal
+manifest, and runs the packaged smoke verification. A smoke failure leaves no
+archive or checksum in the output directory.
 
 ## Verify and install a downloaded archive
 
@@ -41,6 +44,7 @@ tar --extract --gzip --same-permissions \
     --file termux-neo-0.5.0-beta.tar.gz
 cd termux-neo-0.5.0-beta
 sha256sum -c RELEASE_MANIFEST.sha256
+bash scripts/smoke-release.sh
 bash install.sh
 ```
 
@@ -49,6 +53,10 @@ The external checksum authenticates the archive bytes. The internal
 installer, updater, and uninstaller also validate that manifest automatically
 before any installed path changes. Unsafe, duplicate, missing, unlisted,
 symlinked, or checksum-mismatched entries fail closed.
+
+The packaged smoke script checks runtime syntax, version/help dispatch, and a
+deterministic no-color render. It reads the extracted tree and uses a private
+temporary home; it does not install or modify user settings.
 
 The extracted tree contains no `.git` directory and does not require Git.
 It remains a complete local lifecycle source:

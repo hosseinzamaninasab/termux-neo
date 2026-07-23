@@ -7,8 +7,10 @@ source_fixture="$fixture/source-no-git"
 output_a="$fixture/output-a"
 output_b="$fixture/output-b"
 output_c="$fixture/output-c"
+output_d="$fixture/output-d"
 extract_root="$fixture/extract"
 tampered_root="$fixture/tampered"
+smoke_failure_source="$fixture/smoke-failure-source"
 termux_files="$fixture/files"
 test_home="$termux_files/home"
 test_prefix="$termux_files/usr"
@@ -25,6 +27,7 @@ mkdir -p \
     "$output_a" \
     "$output_b" \
     "$output_c" \
+    "$output_d" \
     "$extract_root" \
     "$test_home" \
     "$test_prefix/bin"
@@ -39,7 +42,8 @@ fail() {
 cp -p VERSION LICENSE README.md install.sh update.sh uninstall.sh \
     "$source_fixture/"
 cp -pR bin config docs src "$source_fixture/"
-cp -p scripts/package-release.sh "$source_fixture/scripts/"
+cp -p scripts/package-release.sh scripts/smoke-release.sh \
+    "$source_fixture/scripts/"
 [[ ! -e "$source_fixture/.git" ]] ||
     fail "release source fixture unexpectedly contains Git metadata"
 
@@ -66,6 +70,9 @@ PATH="$test_path" bash "$source_fixture/scripts/package-release.sh" "$output_b" 
 grep -Fqx 'PASS: reproducible release artifact created and verified' \
     "$fixture/package-a.stdout" ||
     fail "release package success line is missing"
+grep -Fqx 'PASS: packaged release smoke verification' \
+    "$fixture/package-a.stdout" ||
+    fail "release package smoke line is missing"
 
 for output_dir in "$output_a" "$output_b"; do
     [[ -f "$output_dir/$archive_name" &&
@@ -136,6 +143,39 @@ cmp -s "$output_a/$checksum_name" "$output_c/$checksum_name" ||
     fail "packaged uninstaller mode is not 755"
 [[ "$(stat -c '%a' "$package_root/scripts/package-release.sh")" == "755" ]] ||
     fail "packaged release builder mode is not 755"
+[[ "$(stat -c '%a' "$package_root/scripts/smoke-release.sh")" == "755" ]] ||
+    fail "packaged release smoke mode is not 755"
+
+bash "$package_root/scripts/smoke-release.sh" \
+    > "$fixture/smoke.stdout" 2> "$fixture/smoke.stderr" ||
+    fail "extracted release smoke verification failed"
+[[ ! -s "$fixture/smoke.stderr" ]] ||
+    fail "extracted release smoke verification produced stderr"
+grep -Fqx 'PASS: packaged release smoke verification' \
+    "$fixture/smoke.stdout" ||
+    fail "extracted release smoke success line is missing"
+
+# A smoke failure prevents archive and checksum publication.
+cp -pR "$source_fixture" "$smoke_failure_source"
+printf '%s\n' \
+    '#!/data/data/com.termux/files/usr/bin/bash' \
+    'exit 91' > "$smoke_failure_source/scripts/smoke-release.sh"
+chmod 755 "$smoke_failure_source/scripts/smoke-release.sh"
+
+set +e
+PATH="$test_path" \
+    bash "$smoke_failure_source/scripts/package-release.sh" "$output_d" \
+    > "$fixture/smoke-failure.stdout" 2> "$fixture/smoke-failure.stderr"
+smoke_failure_status=$?
+set -e
+(( smoke_failure_status != 0 )) ||
+    fail "release builder accepted an artifact with failing smoke verification"
+grep -Fq 'archive smoke verification failed' \
+    "$fixture/smoke-failure.stdout" ||
+    fail "release smoke failure was not reported"
+[[ ! -e "$output_d/$archive_name" &&
+   ! -e "$output_d/$checksum_name" ]] ||
+    fail "failed smoke verification published an archive or checksum"
 
 # A changed package file fails manifest validation before any installed path
 # is created.

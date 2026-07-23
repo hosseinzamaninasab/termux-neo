@@ -22,6 +22,10 @@ Verified and unverified environment boundaries, responsive widths, data-source
 fallback scenarios, and the interactive-shell scope are recorded in
 [docs/compatibility.md](docs/compatibility.md).
 
+The portable local/CI quality command, test groups, release-artifact smoke
+boundary, and device-only verification checklist are documented in
+[docs/quality.md](docs/quality.md).
+
 After installation:
 
 ```bash
