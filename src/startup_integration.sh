@@ -38,7 +38,7 @@ termux_neo_startup_backup_dir() {
 }
 
 termux_neo_startup_command() {
-    local command_path="${PROJECT_ROOT-}/bin/termux-neo"
+    local command_path="${TERMUX_NEO_COMMAND_PATH:-${PROJECT_ROOT-}/bin/termux-neo}"
 
     termux_neo_startup_path_is_safe "$command_path" || return 1
     [[ -f "$command_path" && -x "$command_path" ]] || return 1
