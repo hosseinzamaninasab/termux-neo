@@ -19,6 +19,7 @@ module_is_ipv4_address() {
 
 module_network_primary_interface() {
     local interface=""
+    local network_root=""
     local route=""
     local state=""
 
@@ -30,10 +31,13 @@ module_network_primary_interface() {
     fi
 
     if [[ -z "$interface" ]]; then
+        network_root="$(module_network_class_root 2>/dev/null || true)"
+        [[ -n "$network_root" ]] || return 1
+
         while IFS= read -r interface
         do
-            [[ -r "/sys/class/net/$interface/operstate" ]] || continue
-            state="$(cat "/sys/class/net/$interface/operstate" 2>/dev/null || true)"
+            [[ -r "$network_root/$interface/operstate" ]] || continue
+            state="$(cat "$network_root/$interface/operstate" 2>/dev/null || true)"
             case "$state" in
                 up|unknown)
                     printf '%s' "$interface"

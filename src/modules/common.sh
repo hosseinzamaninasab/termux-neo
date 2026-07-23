@@ -51,11 +51,26 @@ module_read_getprop() {
     printf '%s' "$value"
 }
 
+module_network_class_root() {
+    local root="${TERMUX_NEO_NET_CLASS_ROOT:-/sys/class/net}"
+
+    [[ -n "$root" ]] || return 1
+    [[ "$root" != *$'\n'* ]] || return 1
+    [[ "$root" != *$'\r'* ]] || return 1
+    [[ "$root" != *$'\t'* ]] || return 1
+    [[ "$root" != *$'\e'* ]] || return 1
+
+    printf '%s' "$root"
+}
+
 module_interface_names() {
+    local root=""
     local path
     local name
 
-    for path in /sys/class/net/*
+    root="$(module_network_class_root)" || return 1
+
+    for path in "$root"/*
     do
         [[ -e "$path" ]] || continue
         name="${path##*/}"

@@ -18,6 +18,10 @@ the internal file manifest, exact local-archive commands, and the reproducible
 packaging command are documented in
 [docs/release-artifacts.md](docs/release-artifacts.md).
 
+Verified and unverified environment boundaries, responsive widths, data-source
+fallback scenarios, and the interactive-shell scope are recorded in
+[docs/compatibility.md](docs/compatibility.md).
+
 After installation:
 
 ```bash
