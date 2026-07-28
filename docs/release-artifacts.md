@@ -40,19 +40,30 @@ Place both published files in the fixed download directory, then run:
 ```bash
 cd "$HOME/storage/downloads/Telegram"
 sha256sum -c termux-neo-0.5.0-beta.tar.gz.sha256
+extract_parent="$(
+    mktemp -d "$HOME/storage/downloads/Telegram/termux-neo-extract.XXXXXX"
+)"
 tar --extract --gzip --same-permissions \
-    --file termux-neo-0.5.0-beta.tar.gz
-cd termux-neo-0.5.0-beta
+    --file termux-neo-0.5.0-beta.tar.gz \
+    --directory "$extract_parent"
+cd "$extract_parent/termux-neo-0.5.0-beta"
 sha256sum -c RELEASE_MANIFEST.sha256
 bash scripts/smoke-release.sh
 bash install.sh
 ```
 
-The external checksum authenticates the archive bytes. The internal
+The external checksum verifies archive integrity against the supplied digest;
+it is not a digital signature and cannot authenticate an untrusted publisher
+by itself. Obtain both files from the trusted project release channel and
+verify the checksum before extraction. The internal
 `RELEASE_MANIFEST.sha256` covers every packaged file except itself. The
 installer, updater, and uninstaller also validate that manifest automatically
 before any installed path changes. Unsafe, duplicate, missing, unlisted,
 symlinked, or checksum-mismatched entries fail closed.
+
+The builder refuses a symlinked report target. Archive and checksum
+publication is treated as one failure-safe boundary: if either final move
+fails, any half-published counterpart is removed.
 
 The packaged smoke script checks runtime syntax, version/help dispatch, and a
 deterministic no-color render. It reads the extracted tree and uses a private

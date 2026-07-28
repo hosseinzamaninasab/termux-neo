@@ -21,9 +21,9 @@ bash scripts/quality-check.sh --list > "$list_file" 2> "$stderr_file" ||
     fail "quality test registry could not be listed"
 [[ ! -s "$stderr_file" ]] ||
     fail "quality test registry produced stderr"
-[[ "$(wc -l < "$list_file")" == "21" ]] ||
-    fail "quality registry does not contain 21 tests"
-[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "21" ]] ||
+[[ "$(wc -l < "$list_file")" == "22" ]] ||
+    fail "quality registry does not contain 22 tests"
+[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "22" ]] ||
     fail "quality registry contains duplicate tests"
 
 while IFS= read -r test_path; do

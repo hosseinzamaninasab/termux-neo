@@ -23,6 +23,8 @@ module_battery_charger_online() {
     local root="${TERMUX_NEO_POWER_SUPPLY_ROOT:-/sys/class/power_supply}"
     local supply type online
 
+    module_data_root_is_safe "$root" || return 1
+
     for supply in "$root"/*
     do
         [[ -d "$supply" && -r "$supply/online" ]] || continue
@@ -38,6 +40,8 @@ module_battery_charger_online() {
 module_battery_from_sysfs() {
     local root="${TERMUX_NEO_POWER_SUPPLY_ROOT:-/sys/class/power_supply}"
     local supply="" type="" percentage="" status=""
+
+    module_data_root_is_safe "$root" || return 1
 
     if [[ -d "$root/battery" ]]; then
         supply="$root/battery"

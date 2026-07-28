@@ -38,7 +38,8 @@ termux_neo_cli_version() {
     local version_file="$PROJECT_ROOT/VERSION"
     local version=""
 
-    if [[ ! -f "$version_file" || ! -r "$version_file" ]]; then
+    if [[ ! -f "$version_file" || -L "$version_file" ||
+          ! -r "$version_file" ]]; then
         termux_neo_cli_error "version file is unavailable"
         return 1
     fi
@@ -60,10 +61,7 @@ termux_neo_cli_config_path() {
     local config_path="${TERMUX_NEO_CONFIG_PATH-}"
 
     if [[ -z "$config_path" ||
-          "$config_path" == *$'\n'* ||
-          "$config_path" == *$'\r'* ||
-          "$config_path" == *$'\t'* ||
-          "$config_path" == *$'\e'* ]]
+          "$config_path" =~ [[:cntrl:]] ]]
     then
         termux_neo_cli_error "configuration path is invalid"
         return 1

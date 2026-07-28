@@ -4,6 +4,8 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_ROOT="$(dirname "$SCRIPT_DIR")"
+TEMP_PARENT="${TMPDIR:-/tmp}"
+TEMP_PARENT="${TEMP_PARENT%/}"
 TEMP_DIR=""
 
 smoke_error() {
@@ -16,11 +18,22 @@ smoke_fail() {
     exit 1
 }
 
+smoke_path_is_safe() {
+    local value="${1-}"
+
+    [[ "$value" == /* ]] || return 1
+    [[ "$value" != "/" ]] || return 1
+    [[ "$value" != *"//"* ]] || return 1
+    [[ "$value" != *"/./"* && "$value" != */. ]] || return 1
+    [[ "$value" != *"/../"* && "$value" != */.. ]] || return 1
+    [[ ! "$value" =~ [[:cntrl:]] ]]
+}
+
 smoke_cleanup() {
     local exit_code=$?
 
     if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" &&
-          "$TEMP_DIR" == "${TMPDIR:-/tmp}"/termux-neo-smoke.* ]]
+          "$TEMP_DIR" == "$TEMP_PARENT"/termux-neo-smoke.* ]]
     then
         rm -rf -- "$TEMP_DIR" || true
     fi
@@ -41,9 +54,23 @@ done
 [[ -d "$PACKAGE_ROOT" && ! -L "$PACKAGE_ROOT" ]] ||
     smoke_fail "package root is not a regular directory"
 [[ -f "$PACKAGE_ROOT/VERSION" &&
+   ! -L "$PACKAGE_ROOT/VERSION" &&
    -f "$PACKAGE_ROOT/src/main.sh" &&
+   ! -L "$PACKAGE_ROOT/src/main.sh" &&
    -f "$PACKAGE_ROOT/config/settings.example.conf" ]] ||
     smoke_fail "package smoke inputs are incomplete"
+[[ ! -L "$PACKAGE_ROOT/config/settings.example.conf" ]] ||
+    smoke_fail "package smoke inputs contain a symbolic link"
+
+smoke_path_is_safe "$TEMP_PARENT" ||
+    smoke_fail "temporary directory parent is unsafe"
+[[ -d "$TEMP_PARENT" && ! -L "$TEMP_PARENT" && -w "$TEMP_PARENT" ]] ||
+    smoke_fail "temporary directory parent is unavailable"
+
+unexpected_link="$(find "$PACKAGE_ROOT" -type l -print -quit)" ||
+    smoke_fail "package tree could not be inspected"
+[[ -z "$unexpected_link" ]] ||
+    smoke_fail "package tree contains a symbolic link"
 
 IFS= read -r version < "$PACKAGE_ROOT/VERSION" ||
     smoke_fail "VERSION could not be read"
@@ -66,7 +93,7 @@ done < <(
         -print0
 )
 
-TEMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/termux-neo-smoke.XXXXXX")" ||
+TEMP_DIR="$(mktemp -d "$TEMP_PARENT/termux-neo-smoke.XXXXXX")" ||
     smoke_fail "temporary directory could not be created"
 chmod 700 "$TEMP_DIR"
 

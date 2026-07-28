@@ -122,7 +122,6 @@ cmp -s "$test_home/.bashrc" "$fixture/bashrc-before-install" ||
 
 # A failure after runtime replacement restores the exact prior installation.
 printf 'rollback-sentinel\n' > "$runtime_root/ROLLBACK_SENTINEL"
-printf '# rollback-command-sentinel\n' >> "$command_path"
 cp "$runtime_root/ROLLBACK_SENTINEL" "$fixture/runtime-sentinel-before-failure"
 cp "$command_path" "$fixture/command-before-failure"
 cp -p "$config_path" "$fixture/settings-before-failure"

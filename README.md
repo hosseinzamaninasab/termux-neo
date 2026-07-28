@@ -26,6 +26,10 @@ The portable local/CI quality command, test groups, release-artifact smoke
 boundary, and device-only verification checklist are documented in
 [docs/quality.md](docs/quality.md).
 
+The reviewed trust model, parser and filesystem boundaries, diagnostic
+disclosure, release-integrity chain, and residual limitations are documented
+in [docs/security.md](docs/security.md).
+
 After installation:
 
 ```bash

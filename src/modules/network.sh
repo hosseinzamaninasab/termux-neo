@@ -27,6 +27,7 @@ module_network_primary_interface() {
         route="$(ip route show default 2>/dev/null | head -n 1 || true)"
         if [[ "$route" =~ [[:space:]]dev[[:space:]]([^[:space:]]+) ]]; then
             interface="${BASH_REMATCH[1]}"
+            module_interface_name_is_safe "$interface" || interface=""
         fi
     fi
 

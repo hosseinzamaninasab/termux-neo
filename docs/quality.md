@@ -16,7 +16,7 @@ analysis when ShellCheck is available, and the complete test suite.
 | --- | --- |
 | Unit | CLI, configuration, layout, colors, content, renderers, and UI |
 | Fixtures | Compatibility, module fallbacks, and safe data modules |
-| Integration | Diagnostics, render-once flow, startup, and pipeline contract |
+| Integration | Diagnostics, render-once flow, startup, pipeline, and security/failure-safety contracts |
 | Package | Reproducible artifact lifecycle and internal artifact smoke test |
 | Lifecycle | Installer, updater, and uninstaller transactions |
 

@@ -34,6 +34,9 @@ UNINSTALL_COMMITTED=0
 ROLLBACK_ARMED=0
 ROLLBACK_FAILED=0
 REPORT_READY=0
+REPORT_TEE_PID=""
+REPORT_ORIGINAL_STDOUT_FD=""
+REPORT_ORIGINAL_STDERR_FD=""
 CLEANUP_FAILED=0
 
 INSTALLED_VERSION="absent"
@@ -58,10 +61,10 @@ termux_neo_uninstall_path_is_safe() {
 
     [[ "$value" == /* ]] || return 1
     [[ "$value" != "/" ]] || return 1
-    [[ "$value" != *$'\n'* ]] || return 1
-    [[ "$value" != *$'\r'* ]] || return 1
-    [[ "$value" != *$'\t'* ]] || return 1
-    [[ "$value" != *$'\e'* ]] || return 1
+    [[ "$value" != *"//"* ]] || return 1
+    [[ "$value" != *"/./"* && "$value" != */. ]] || return 1
+    [[ "$value" != *"/../"* && "$value" != */.. ]] || return 1
+    [[ ! "$value" =~ [[:cntrl:]] ]]
 }
 
 termux_neo_uninstall_require_tools() {
@@ -154,25 +157,60 @@ termux_neo_uninstall_ensure_directory() {
 }
 
 termux_neo_uninstall_open_report() {
+    local previous_umask=""
+
     termux_neo_uninstall_ensure_directory "$REPORT_CACHE_DIR" || return 1
     termux_neo_uninstall_ensure_directory "$REPORT_PRODUCT_DIR" || return 1
     termux_neo_uninstall_ensure_directory "$REPORT_DIR" || return 1
 
+    previous_umask="$(umask)"
+    umask 077
+
     if [[ -e "$UNINSTALL_REPORT_PATH" || -L "$UNINSTALL_REPORT_PATH" ]]; then
         [[ -f "$UNINSTALL_REPORT_PATH" &&
            ! -L "$UNINSTALL_REPORT_PATH" ]] || {
+            umask "$previous_umask"
             termux_neo_uninstall_error \
                 "uninstall report path is not a regular file"
             return 1
         }
+        chmod 600 -- "$UNINSTALL_REPORT_PATH" || {
+            umask "$previous_umask"
+            return 1
+        }
     fi
 
-    : > "$UNINSTALL_REPORT_PATH" || return 1
-    chmod 600 "$UNINSTALL_REPORT_PATH" || return 1
-    exec > >(tee "$UNINSTALL_REPORT_PATH") 2>&1
+    : > "$UNINSTALL_REPORT_PATH" || {
+        umask "$previous_umask"
+        return 1
+    }
+    chmod 600 -- "$UNINSTALL_REPORT_PATH" || {
+        umask "$previous_umask"
+        return 1
+    }
+    umask "$previous_umask"
+
+    exec {REPORT_ORIGINAL_STDOUT_FD}>&1
+    exec {REPORT_ORIGINAL_STDERR_FD}>&2
+    exec > >(tee -- "$UNINSTALL_REPORT_PATH" >&"$REPORT_ORIGINAL_STDOUT_FD") 2>&1
+    REPORT_TEE_PID=$!
     REPORT_READY=1
 
     printf '%s\n' '===== Termux Neo safe uninstall ====='
+}
+
+termux_neo_uninstall_close_report() {
+    local tee_status=0
+
+    (( REPORT_READY == 1 )) || return 0
+
+    exec 1>&"$REPORT_ORIGINAL_STDOUT_FD" 2>&"$REPORT_ORIGINAL_STDERR_FD"
+    wait "$REPORT_TEE_PID" || tee_status=$?
+    exec {REPORT_ORIGINAL_STDOUT_FD}>&-
+    exec {REPORT_ORIGINAL_STDERR_FD}>&-
+    REPORT_READY=0
+
+    (( tee_status == 0 ))
 }
 
 termux_neo_uninstall_validate_source() {
@@ -282,18 +320,31 @@ termux_neo_uninstall_manifest_is_owned() {
 
 termux_neo_uninstall_command_is_owned() {
     local command_file="${1-}"
-    local first_line=""
-    local second_line=""
+    local bash_command_quoted=""
+    local runtime_command_quoted=""
+    local command_path_quoted=""
+    local -a launcher_lines=()
 
     [[ -f "$command_file" && ! -L "$command_file" &&
        -r "$command_file" && -x "$command_file" ]] || return 1
-    {
-        IFS= read -r first_line
-        IFS= read -r second_line
-    } < "$command_file" || return 1
+    mapfile -t launcher_lines < "$command_file" || return 1
 
-    [[ "$first_line" == "#!$UNINSTALL_PREFIX/bin/bash" &&
-       "$second_line" == '# Termux Neo installed launcher v1' ]]
+    printf -v bash_command_quoted '%q' "$UNINSTALL_PREFIX/bin/bash"
+    printf -v runtime_command_quoted '%q' "$RUNTIME_ROOT/src/main.sh"
+    printf -v command_path_quoted '%q' "$COMMAND_PATH"
+
+    (( ${#launcher_lines[@]} == 7 )) || return 1
+    [[ "${launcher_lines[0]}" == "#!$UNINSTALL_PREFIX/bin/bash" &&
+       "${launcher_lines[1]}" == '# Termux Neo installed launcher v1' &&
+       "${launcher_lines[2]}" == 'set -e' &&
+       "${launcher_lines[3]}" == \
+           'TERMUX_NEO_CONFIG_PATH="${TERMUX_NEO_CONFIG_PATH:-$HOME/.config/termux-neo/settings.conf}"' &&
+       "${launcher_lines[4]}" == \
+           "TERMUX_NEO_COMMAND_PATH=$command_path_quoted" &&
+       "${launcher_lines[5]}" == \
+           'export TERMUX_NEO_CONFIG_PATH TERMUX_NEO_COMMAND_PATH' &&
+       "${launcher_lines[6]}" == \
+           "exec $bash_command_quoted $runtime_command_quoted \"\$@\"" ]]
 }
 
 termux_neo_uninstall_validate_installed_targets() {
@@ -397,17 +448,17 @@ termux_neo_uninstall_remove_startup() {
 
 termux_neo_uninstall_move_targets() {
     if (( CONFIG_PRESENT == 1 )); then
-        mv "$CONFIG_PATH" "$CONFIG_BACKUP/original" || return 1
+        mv -- "$CONFIG_PATH" "$CONFIG_BACKUP/original" || return 1
         OLD_CONFIG_MOVED=1
     fi
 
     if (( COMMAND_PRESENT == 1 )); then
-        mv "$COMMAND_PATH" "$COMMAND_BACKUP/original" || return 1
+        mv -- "$COMMAND_PATH" "$COMMAND_BACKUP/original" || return 1
         OLD_COMMAND_MOVED=1
     fi
 
     if (( RUNTIME_PRESENT == 1 )); then
-        mv "$RUNTIME_ROOT" "$RUNTIME_BACKUP/original" || return 1
+        mv -- "$RUNTIME_ROOT" "$RUNTIME_BACKUP/original" || return 1
         OLD_RUNTIME_MOVED=1
     fi
 }
@@ -425,12 +476,12 @@ termux_neo_uninstall_restore_startup() {
     restore_file="$(
         mktemp "$startup_dir/.termux-neo-bashrc.restore.XXXXXX"
     )" || return 1
-    cp -p "$STARTUP_BACKUP" "$restore_file" || {
-        rm -f "$restore_file"
+    cp -p -- "$STARTUP_BACKUP" "$restore_file" || {
+        rm -f -- "$restore_file"
         return 1
     }
-    mv -f "$restore_file" "$STARTUP_PATH" || {
-        rm -f "$restore_file"
+    mv -f -- "$restore_file" "$STARTUP_PATH" || {
+        rm -f -- "$restore_file"
         return 1
     }
     STARTUP_CHANGED=0
@@ -440,7 +491,7 @@ termux_neo_uninstall_rollback() {
     set +e
 
     if (( OLD_RUNTIME_MOVED == 1 )); then
-        if mv "$RUNTIME_BACKUP/original" "$RUNTIME_ROOT"; then
+        if mv -- "$RUNTIME_BACKUP/original" "$RUNTIME_ROOT"; then
             OLD_RUNTIME_MOVED=0
         else
             ROLLBACK_FAILED=1
@@ -448,7 +499,7 @@ termux_neo_uninstall_rollback() {
     fi
 
     if (( OLD_COMMAND_MOVED == 1 )); then
-        if mv "$COMMAND_BACKUP/original" "$COMMAND_PATH"; then
+        if mv -- "$COMMAND_BACKUP/original" "$COMMAND_PATH"; then
             OLD_COMMAND_MOVED=0
         else
             ROLLBACK_FAILED=1
@@ -456,7 +507,7 @@ termux_neo_uninstall_rollback() {
     fi
 
     if (( OLD_CONFIG_MOVED == 1 )); then
-        if mv "$CONFIG_BACKUP/original" "$CONFIG_PATH"; then
+        if mv -- "$CONFIG_BACKUP/original" "$CONFIG_PATH"; then
             OLD_CONFIG_MOVED=0
         else
             ROLLBACK_FAILED=1
@@ -498,7 +549,7 @@ termux_neo_uninstall_remove_runtime_backup() {
     [[ -d "$RUNTIME_BACKUP" && ! -L "$RUNTIME_BACKUP" ]] || return 1
     termux_neo_uninstall_manifest_is_owned "$runtime_original" || return 1
     rm -rf -- "$runtime_original" || return 1
-    rmdir "$RUNTIME_BACKUP"
+    rmdir -- "$RUNTIME_BACKUP"
 }
 
 termux_neo_uninstall_remove_command_backup() {
@@ -509,8 +560,8 @@ termux_neo_uninstall_remove_command_backup() {
     [[ -d "$COMMAND_BACKUP" && ! -L "$COMMAND_BACKUP" ]] || return 1
     termux_neo_uninstall_command_is_owned "$COMMAND_BACKUP/original" ||
         return 1
-    rm -f "$COMMAND_BACKUP/original" || return 1
-    rmdir "$COMMAND_BACKUP"
+    rm -f -- "$COMMAND_BACKUP/original" || return 1
+    rmdir -- "$COMMAND_BACKUP"
 }
 
 termux_neo_uninstall_remove_config_backup() {
@@ -521,8 +572,8 @@ termux_neo_uninstall_remove_config_backup() {
     [[ -d "$CONFIG_BACKUP" && ! -L "$CONFIG_BACKUP" ]] || return 1
     [[ -f "$CONFIG_BACKUP/original" &&
        ! -L "$CONFIG_BACKUP/original" ]] || return 1
-    rm -f "$CONFIG_BACKUP/original" || return 1
-    rmdir "$CONFIG_BACKUP"
+    rm -f -- "$CONFIG_BACKUP/original" || return 1
+    rmdir -- "$CONFIG_BACKUP"
 }
 
 termux_neo_uninstall_cleanup() {
@@ -557,15 +608,15 @@ termux_neo_uninstall_cleanup() {
             fi
         fi
         if (( REMOVE_CONFIG == 1 )); then
-            rmdir "$CONFIG_DIR" 2>/dev/null || true
+            rmdir -- "$CONFIG_DIR" 2>/dev/null || true
         fi
     elif (( ROLLBACK_FAILED == 0 )); then
         [[ -z "$RUNTIME_BACKUP" || ! -e "$RUNTIME_BACKUP" ]] ||
-            rmdir "$RUNTIME_BACKUP" 2>/dev/null
+            rmdir -- "$RUNTIME_BACKUP" 2>/dev/null
         [[ -z "$COMMAND_BACKUP" || ! -e "$COMMAND_BACKUP" ]] ||
-            rmdir "$COMMAND_BACKUP" 2>/dev/null
+            rmdir -- "$COMMAND_BACKUP" 2>/dev/null
         [[ -z "$CONFIG_BACKUP" || ! -e "$CONFIG_BACKUP" ]] ||
-            rmdir "$CONFIG_BACKUP" 2>/dev/null
+            rmdir -- "$CONFIG_BACKUP" 2>/dev/null
     fi
 }
 
@@ -608,6 +659,7 @@ termux_neo_uninstall_report_success() {
 
 termux_neo_uninstall_exit() {
     local status="${1-1}"
+    local report_status=0
 
     trap - EXIT
     set +e
@@ -617,6 +669,11 @@ termux_neo_uninstall_exit() {
     termux_neo_uninstall_cleanup
     if (( REPORT_READY == 1 )); then
         printf 'uninstall report: %s\n' "$UNINSTALL_REPORT_PATH"
+        termux_neo_uninstall_close_report || report_status=1
+    fi
+    if (( status == 0 && report_status != 0 )); then
+        termux_neo_uninstall_error "uninstall report could not be completed"
+        status=1
     fi
     exit "$status"
 }

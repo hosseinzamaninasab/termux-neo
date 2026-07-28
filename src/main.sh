@@ -63,14 +63,7 @@ termux_neo_prompt_path() {
         path="~${path#"$home_path"}"
     fi
 
-    path="${path//$'\n'/}"
-    path="${path//$'\r'/}"
-    path="${path//$'\t'/}"
-    path="${path//$'\e'/}"
-
-    if [[ -z "$path" || "$path" == *"•"* ]]; then
-        path="~"
-    fi
+    path="$(module_clean_value "$path" "~")"
 
     printf '%s' "$path"
 }

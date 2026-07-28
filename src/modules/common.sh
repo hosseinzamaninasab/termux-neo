@@ -11,12 +11,19 @@ module_command_exists() {
 module_clean_value() {
     local value="${1-}"
     local fallback="${2-Unavailable}"
+    local control_character=""
 
     value="${value//$'\n'/ }"
     value="${value//$'\r'/ }"
     value="${value//$'\t'/ }"
-    value="${value//$'\e'/}"
+
+    while [[ "$value" =~ [[:cntrl:]] ]]; do
+        control_character="${BASH_REMATCH[0]}"
+        value="${value//"$control_character"/}"
+    done
+
     value="${value//|/}"
+    value="${value//•/}"
 
     while [[ "$value" == " "* ]]; do
         value="${value# }"
@@ -33,6 +40,27 @@ module_clean_value() {
     [[ -n "$value" ]] || value="$fallback"
 
     printf '%s' "$value"
+}
+
+module_data_root_is_safe() {
+    local root="${1-}"
+
+    [[ "$root" == /* ]] || return 1
+    [[ "$root" != "/" ]] || return 1
+    [[ "$root" != *"//"* ]] || return 1
+    [[ "$root" != *"/./"* && "$root" != */. ]] || return 1
+    [[ "$root" != *"/../"* && "$root" != */.. ]] || return 1
+    [[ ! "$root" =~ [[:cntrl:]] ]] || return 1
+    [[ -d "$root" && ! -L "$root" ]]
+}
+
+module_interface_name_is_safe() {
+    local interface="${1-}"
+
+    [[ -n "$interface" ]] || return 1
+    (( ${#interface} <= 64 )) || return 1
+    [[ "$interface" != -* ]] || return 1
+    [[ "$interface" =~ ^[[:alnum:]_.:-]+$ ]]
 }
 
 module_read_getprop() {
@@ -54,11 +82,7 @@ module_read_getprop() {
 module_network_class_root() {
     local root="${TERMUX_NEO_NET_CLASS_ROOT:-/sys/class/net}"
 
-    [[ -n "$root" ]] || return 1
-    [[ "$root" != *$'\n'* ]] || return 1
-    [[ "$root" != *$'\r'* ]] || return 1
-    [[ "$root" != *$'\t'* ]] || return 1
-    [[ "$root" != *$'\e'* ]] || return 1
+    module_data_root_is_safe "$root" || return 1
 
     printf '%s' "$root"
 }
@@ -75,6 +99,7 @@ module_interface_names() {
         [[ -e "$path" ]] || continue
         name="${path##*/}"
         [[ "$name" != "lo" ]] || continue
+        module_interface_name_is_safe "$name" || continue
         printf '%s\n' "$name"
     done
 }

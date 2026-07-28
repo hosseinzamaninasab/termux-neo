@@ -216,7 +216,6 @@ cmp -s "$config_path" "$fixture/settings-before-invalid-target" ||
 target_failure="$fixture/target-0.5.3-beta"
 make_target "$target_failure" "0.5.3-beta"
 printf 'rollback-sentinel\n' > "$runtime_root/ROLLBACK_SENTINEL"
-printf '# rollback-command-sentinel\n' >> "$command_path"
 cp "$runtime_root/ROLLBACK_SENTINEL" \
     "$fixture/runtime-sentinel-before-failure"
 cp -p "$command_path" "$fixture/command-before-failure"

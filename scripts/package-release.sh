@@ -9,6 +9,12 @@ OUTPUT_DIR="${1-"$SOURCE_ROOT/dist"}"
 TEMP_DIR=""
 REPORT_FILE=""
 SUCCESS=0
+ARCHIVE_PUBLISHED=0
+CHECKSUM_PUBLISHED=0
+REPORT_READY=0
+REPORT_TEE_PID=""
+REPORT_ORIGINAL_STDOUT_FD=""
+REPORT_ORIGINAL_STDERR_FD=""
 
 release_error() {
     printf 'termux-neo release: %s\n' "${1-release packaging failed}" >&2
@@ -24,14 +30,32 @@ release_path_is_safe() {
 
     [[ "$value" == /* ]] || return 1
     [[ "$value" != "/" ]] || return 1
-    [[ "$value" != *$'\n'* ]] || return 1
-    [[ "$value" != *$'\r'* ]] || return 1
-    [[ "$value" != *$'\t'* ]] || return 1
-    [[ "$value" != *$'\e'* ]]
+    [[ "$value" != *"//"* ]] || return 1
+    [[ "$value" != *"/./"* && "$value" != */. ]] || return 1
+    [[ "$value" != *"/../"* && "$value" != */.. ]] || return 1
+    [[ ! "$value" =~ [[:cntrl:]] ]]
+}
+
+release_close_report() {
+    local tee_status=0
+
+    (( REPORT_READY == 1 )) || return 0
+
+    exec 1>&"$REPORT_ORIGINAL_STDOUT_FD" 2>&"$REPORT_ORIGINAL_STDERR_FD"
+    wait "$REPORT_TEE_PID" || tee_status=$?
+    exec {REPORT_ORIGINAL_STDOUT_FD}>&-
+    exec {REPORT_ORIGINAL_STDERR_FD}>&-
+    REPORT_READY=0
+
+    (( tee_status == 0 ))
 }
 
 release_cleanup() {
     local exit_code=$?
+    local report_status=0
+
+    trap - EXIT
+    set +e
 
     if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" &&
           "$TEMP_DIR" == "$OUTPUT_DIR"/.termux-neo-release.* ]]
@@ -40,10 +64,28 @@ release_cleanup() {
     fi
 
     if (( SUCCESS == 0 )); then
+        if (( CHECKSUM_PUBLISHED == 1 )); then
+            rm -f -- "$OUTPUT_DIR/$checksum_name" || true
+        fi
+        if (( ARCHIVE_PUBLISHED == 1 )); then
+            rm -f -- "$OUTPUT_DIR/$archive_name" || true
+        fi
         printf 'Release packaging failed with status %s\n' "$exit_code" >&2
         [[ -z "$REPORT_FILE" ]] ||
             printf 'release report: %s\n' "$REPORT_FILE" >&2
     fi
+
+    release_close_report || report_status=1
+    if (( exit_code == 0 && report_status != 0 )); then
+        release_error "release report could not be completed"
+        (( CHECKSUM_PUBLISHED == 0 )) ||
+            rm -f -- "$OUTPUT_DIR/$checksum_name" || true
+        (( ARCHIVE_PUBLISHED == 0 )) ||
+            rm -f -- "$OUTPUT_DIR/$archive_name" || true
+        exit_code=1
+    fi
+
+    exit "$exit_code"
 }
 
 trap release_cleanup EXIT
@@ -97,6 +139,10 @@ REPORT_FILE="$OUTPUT_DIR/$report_name"
 [[ ! -e "$OUTPUT_DIR/$checksum_name" &&
    ! -L "$OUTPUT_DIR/$checksum_name" ]] ||
     release_fail "checksum already exists: $OUTPUT_DIR/$checksum_name"
+if [[ -e "$REPORT_FILE" || -L "$REPORT_FILE" ]]; then
+    [[ -f "$REPORT_FILE" && ! -L "$REPORT_FILE" ]] ||
+        release_fail "release report path is not a regular file"
+fi
 
 for required_path in \
     VERSION LICENSE README.md install.sh update.sh uninstall.sh \
@@ -133,10 +179,20 @@ termux_neo_release_manifest_verify "$SOURCE_ROOT" release_error ||
     release_fail "source release manifest verification failed"
 
 umask 077
+if [[ -e "$REPORT_FILE" ]]; then
+    chmod 600 -- "$REPORT_FILE" ||
+        release_fail "release report mode could not be set"
+fi
 : > "$REPORT_FILE" || release_fail "release report could not be created"
-chmod 600 "$REPORT_FILE" || release_fail "release report mode could not be set"
-exec > >(tee "$REPORT_FILE") 2>&1
+chmod 600 -- "$REPORT_FILE" ||
+    release_fail "release report mode could not be set"
 umask 022
+
+exec {REPORT_ORIGINAL_STDOUT_FD}>&1
+exec {REPORT_ORIGINAL_STDERR_FD}>&2
+exec > >(tee -- "$REPORT_FILE" >&"$REPORT_ORIGINAL_STDOUT_FD") 2>&1
+REPORT_TEE_PID=$!
+REPORT_READY=1
 
 printf '===== Termux Neo release packaging =====\n'
 printf 'version: %s\n' "$version"
@@ -242,8 +298,10 @@ archive_checksum="${archive_checksum%% *}"
 printf '%s  %s\n' "$archive_checksum" "$archive_name" > "$checksum_temp"
 chmod 644 "$archive_temp" "$checksum_temp"
 
-mv "$archive_temp" "$OUTPUT_DIR/$archive_name"
-mv "$checksum_temp" "$OUTPUT_DIR/$checksum_name"
+mv -- "$archive_temp" "$OUTPUT_DIR/$archive_name"
+ARCHIVE_PUBLISHED=1
+mv -- "$checksum_temp" "$OUTPUT_DIR/$checksum_name"
+CHECKSUM_PUBLISHED=1
 
 printf '\nPASS: reproducible release artifact created and verified\n'
 printf 'archive: %s\n' "$OUTPUT_DIR/$archive_name"

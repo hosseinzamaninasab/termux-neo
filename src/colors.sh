@@ -55,40 +55,110 @@ termux_neo_color_theme_file() {
 termux_neo_color_load_theme() {
     local theme="${1-}"
     local theme_file=""
-    local TERMUX_NEO_THEME_NAME=""
-    local TERMUX_NEO_THEME_BORDER=""
-    local TERMUX_NEO_THEME_TITLE=""
-    local TERMUX_NEO_THEME_LABEL=""
-    local TERMUX_NEO_THEME_VALUE=""
-    local TERMUX_NEO_THEME_STATUS=""
-    local TERMUX_NEO_THEME_PROMPT=""
+    local raw_line=""
+    local key=""
     local value=""
+    local parsed_name=""
+    local parsed_border=""
+    local parsed_title=""
+    local parsed_label=""
+    local parsed_value=""
+    local parsed_status=""
+    local parsed_prompt=""
+    local name_seen=0
+    local border_seen=0
+    local title_seen=0
+    local label_seen=0
+    local value_seen=0
+    local status_seen=0
+    local prompt_seen=0
 
     theme_file="$(termux_neo_color_theme_file "$theme")" || return 1
 
-    [[ -f "$theme_file" && -r "$theme_file" ]] || return 1
-    source "$theme_file" || return 1
+    [[ -f "$theme_file" && ! -L "$theme_file" && -r "$theme_file" ]] ||
+        return 1
 
-    [[ "$TERMUX_NEO_THEME_NAME" == "$theme" ]] || return 1
+    while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
+        [[ "$raw_line" != *$'\r'* ]] || return 1
+        [[ "$raw_line" != *$'\t'* ]] || return 1
+        [[ ! "$raw_line" =~ [[:cntrl:]] ]] || return 1
+        [[ -n "$raw_line" ]] || continue
+        [[ "${raw_line:0:1}" != "#" ]] || continue
+        [[ "$raw_line" == *=* ]] || return 1
+
+        key="${raw_line%%=*}"
+        value="${raw_line#*=}"
+        (( ${#value} >= 2 )) || return 1
+        [[ "${value:0:1}" == '"' && "${value: -1}" == '"' ]] ||
+            return 1
+        value="${value:1:${#value}-2}"
+        [[ "$value" != *'"'* ]] || return 1
+
+        case "$key" in
+            TERMUX_NEO_THEME_NAME)
+                (( name_seen == 0 )) || return 1
+                parsed_name="$value"
+                name_seen=1
+                ;;
+            TERMUX_NEO_THEME_BORDER)
+                (( border_seen == 0 )) || return 1
+                parsed_border="$value"
+                border_seen=1
+                ;;
+            TERMUX_NEO_THEME_TITLE)
+                (( title_seen == 0 )) || return 1
+                parsed_title="$value"
+                title_seen=1
+                ;;
+            TERMUX_NEO_THEME_LABEL)
+                (( label_seen == 0 )) || return 1
+                parsed_label="$value"
+                label_seen=1
+                ;;
+            TERMUX_NEO_THEME_VALUE)
+                (( value_seen == 0 )) || return 1
+                parsed_value="$value"
+                value_seen=1
+                ;;
+            TERMUX_NEO_THEME_STATUS)
+                (( status_seen == 0 )) || return 1
+                parsed_status="$value"
+                status_seen=1
+                ;;
+            TERMUX_NEO_THEME_PROMPT)
+                (( prompt_seen == 0 )) || return 1
+                parsed_prompt="$value"
+                prompt_seen=1
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+    done < "$theme_file"
+
+    (( name_seen == 1 && border_seen == 1 && title_seen == 1 &&
+       label_seen == 1 && value_seen == 1 && status_seen == 1 &&
+       prompt_seen == 1 )) || return 1
+    [[ "$parsed_name" == "$theme" ]] || return 1
 
     for value in \
-        "$TERMUX_NEO_THEME_BORDER" \
-        "$TERMUX_NEO_THEME_TITLE" \
-        "$TERMUX_NEO_THEME_LABEL" \
-        "$TERMUX_NEO_THEME_VALUE" \
-        "$TERMUX_NEO_THEME_STATUS" \
-        "$TERMUX_NEO_THEME_PROMPT"
+        "$parsed_border" \
+        "$parsed_title" \
+        "$parsed_label" \
+        "$parsed_value" \
+        "$parsed_status" \
+        "$parsed_prompt"
     do
         termux_neo_color_validate_sgr "$value" || return 1
     done
 
-    TERMUX_NEO_COLOR_ACTIVE_THEME="$TERMUX_NEO_THEME_NAME"
-    TERMUX_NEO_COLOR_BORDER="$TERMUX_NEO_THEME_BORDER"
-    TERMUX_NEO_COLOR_TITLE="$TERMUX_NEO_THEME_TITLE"
-    TERMUX_NEO_COLOR_LABEL="$TERMUX_NEO_THEME_LABEL"
-    TERMUX_NEO_COLOR_VALUE="$TERMUX_NEO_THEME_VALUE"
-    TERMUX_NEO_COLOR_STATUS="$TERMUX_NEO_THEME_STATUS"
-    TERMUX_NEO_COLOR_PROMPT="$TERMUX_NEO_THEME_PROMPT"
+    TERMUX_NEO_COLOR_ACTIVE_THEME="$parsed_name"
+    TERMUX_NEO_COLOR_BORDER="$parsed_border"
+    TERMUX_NEO_COLOR_TITLE="$parsed_title"
+    TERMUX_NEO_COLOR_LABEL="$parsed_label"
+    TERMUX_NEO_COLOR_VALUE="$parsed_value"
+    TERMUX_NEO_COLOR_STATUS="$parsed_status"
+    TERMUX_NEO_COLOR_PROMPT="$parsed_prompt"
 }
 
 termux_neo_color_terminal_supported() {

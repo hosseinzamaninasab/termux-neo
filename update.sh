@@ -29,6 +29,9 @@ UPDATE_COMMITTED=0
 ROLLBACK_ARMED=0
 ROLLBACK_FAILED=0
 REPORT_READY=0
+REPORT_TEE_PID=""
+REPORT_ORIGINAL_STDOUT_FD=""
+REPORT_ORIGINAL_STDERR_FD=""
 
 OLD_RUNTIME_MOVED=0
 NEW_RUNTIME_INSTALLED=0
@@ -64,10 +67,10 @@ termux_neo_update_path_is_safe() {
 
     [[ "$value" == /* ]] || return 1
     [[ "$value" != "/" ]] || return 1
-    [[ "$value" != *$'\n'* ]] || return 1
-    [[ "$value" != *$'\r'* ]] || return 1
-    [[ "$value" != *$'\t'* ]] || return 1
-    [[ "$value" != *$'\e'* ]] || return 1
+    [[ "$value" != *"//"* ]] || return 1
+    [[ "$value" != *"/./"* && "$value" != */. ]] || return 1
+    [[ "$value" != *"/../"* && "$value" != */.. ]] || return 1
+    [[ ! "$value" =~ [[:cntrl:]] ]]
 }
 
 termux_neo_update_require_tools() {
@@ -162,26 +165,61 @@ termux_neo_update_ensure_directory() {
 }
 
 termux_neo_update_open_report() {
+    local previous_umask=""
+
     termux_neo_update_ensure_directory "$REPORT_CACHE_DIR" || return 1
     termux_neo_update_ensure_directory "$REPORT_PRODUCT_DIR" || return 1
     termux_neo_update_ensure_directory "$REPORT_DIR" || return 1
 
+    previous_umask="$(umask)"
+    umask 077
+
     if [[ -e "$UPDATE_REPORT_PATH" || -L "$UPDATE_REPORT_PATH" ]]; then
         [[ -f "$UPDATE_REPORT_PATH" && ! -L "$UPDATE_REPORT_PATH" ]] || {
+            umask "$previous_umask"
             termux_neo_update_error \
                 "update report path is not a regular file"
             return 1
         }
+        chmod 600 -- "$UPDATE_REPORT_PATH" || {
+            umask "$previous_umask"
+            return 1
+        }
     fi
 
-    : > "$UPDATE_REPORT_PATH" || return 1
-    chmod 600 "$UPDATE_REPORT_PATH" || return 1
-    exec > >(tee "$UPDATE_REPORT_PATH") 2>&1
+    : > "$UPDATE_REPORT_PATH" || {
+        umask "$previous_umask"
+        return 1
+    }
+    chmod 600 -- "$UPDATE_REPORT_PATH" || {
+        umask "$previous_umask"
+        return 1
+    }
+    umask "$previous_umask"
+
+    exec {REPORT_ORIGINAL_STDOUT_FD}>&1
+    exec {REPORT_ORIGINAL_STDERR_FD}>&2
+    exec > >(tee -- "$UPDATE_REPORT_PATH" >&"$REPORT_ORIGINAL_STDOUT_FD") 2>&1
+    REPORT_TEE_PID=$!
     REPORT_READY=1
 
     printf '%s\n' \
         '===== Termux Neo safe update =====' \
         "target source: $SOURCE_ROOT"
+}
+
+termux_neo_update_close_report() {
+    local tee_status=0
+
+    (( REPORT_READY == 1 )) || return 0
+
+    exec 1>&"$REPORT_ORIGINAL_STDOUT_FD" 2>&"$REPORT_ORIGINAL_STDERR_FD"
+    wait "$REPORT_TEE_PID" || tee_status=$?
+    exec {REPORT_ORIGINAL_STDOUT_FD}>&-
+    exec {REPORT_ORIGINAL_STDERR_FD}>&-
+    REPORT_READY=0
+
+    (( tee_status == 0 ))
 }
 
 termux_neo_update_numeric_identifier_is_valid() {
@@ -347,6 +385,7 @@ termux_neo_update_validate_source() {
     local required_path=""
     local shell_file=""
     local target_version=""
+    local unexpected_link=""
 
     for required_path in \
         "$SOURCE_ROOT/VERSION" \
@@ -360,6 +399,7 @@ termux_neo_update_validate_source() {
         "$SOURCE_ROOT/docs/cli.md" \
         "$SOURCE_ROOT/docs/installation.md" \
         "$SOURCE_ROOT/docs/release-artifacts.md" \
+        "$SOURCE_ROOT/docs/security.md" \
         "$SOURCE_ROOT/docs/settings-schema-v1.md" \
         "$SOURCE_ROOT/docs/update.md" \
         "$SOURCE_ROOT/docs/uninstallation.md" \
@@ -368,12 +408,39 @@ termux_neo_update_validate_source() {
         "$SOURCE_ROOT/src/release.sh" \
         "$SOURCE_ROOT/src/startup_integration.sh"
     do
-        [[ -f "$required_path" && -r "$required_path" ]] || {
+        [[ -f "$required_path" && ! -L "$required_path" &&
+           -r "$required_path" ]] || {
             termux_neo_update_error \
                 "required target source file is unavailable: $required_path"
             return 1
         }
     done
+
+    unexpected_link="$(
+        find \
+            "$SOURCE_ROOT/VERSION" \
+            "$SOURCE_ROOT/LICENSE" \
+            "$SOURCE_ROOT/README.md" \
+            "$SOURCE_ROOT/install.sh" \
+            "$SOURCE_ROOT/update.sh" \
+            "$SOURCE_ROOT/uninstall.sh" \
+            "$SOURCE_ROOT/bin" \
+            "$SOURCE_ROOT/config/settings.example.conf" \
+            "$SOURCE_ROOT/docs/cli.md" \
+            "$SOURCE_ROOT/docs/installation.md" \
+            "$SOURCE_ROOT/docs/release-artifacts.md" \
+            "$SOURCE_ROOT/docs/security.md" \
+            "$SOURCE_ROOT/docs/settings-schema-v1.md" \
+            "$SOURCE_ROOT/docs/update.md" \
+            "$SOURCE_ROOT/docs/uninstallation.md" \
+            "$SOURCE_ROOT/src" \
+            -type l -print -quit
+    )" || return 1
+    [[ -z "$unexpected_link" ]] || {
+        termux_neo_update_error \
+            "target source contains a symbolic link: $unexpected_link"
+        return 1
+    }
 
     IFS= read -r target_version < "$SOURCE_ROOT/VERSION" || return 1
     termux_neo_update_version_split "$target_version" target_check || {
@@ -490,18 +557,31 @@ termux_neo_update_manifest_is_owned() {
 }
 
 termux_neo_update_command_is_owned() {
-    local first_line=""
-    local second_line=""
+    local bash_command_quoted=""
+    local runtime_command_quoted=""
+    local command_path_quoted=""
+    local -a launcher_lines=()
 
     [[ -f "$COMMAND_PATH" && ! -L "$COMMAND_PATH" &&
        -r "$COMMAND_PATH" && -x "$COMMAND_PATH" ]] || return 1
-    {
-        IFS= read -r first_line
-        IFS= read -r second_line
-    } < "$COMMAND_PATH" || return 1
+    mapfile -t launcher_lines < "$COMMAND_PATH" || return 1
 
-    [[ "$first_line" == "#!$UPDATE_PREFIX/bin/bash" &&
-       "$second_line" == '# Termux Neo installed launcher v1' ]]
+    printf -v bash_command_quoted '%q' "$UPDATE_PREFIX/bin/bash"
+    printf -v runtime_command_quoted '%q' "$RUNTIME_ROOT/src/main.sh"
+    printf -v command_path_quoted '%q' "$COMMAND_PATH"
+
+    (( ${#launcher_lines[@]} == 7 )) || return 1
+    [[ "${launcher_lines[0]}" == "#!$UPDATE_PREFIX/bin/bash" &&
+       "${launcher_lines[1]}" == '# Termux Neo installed launcher v1' &&
+       "${launcher_lines[2]}" == 'set -e' &&
+       "${launcher_lines[3]}" == \
+           'TERMUX_NEO_CONFIG_PATH="${TERMUX_NEO_CONFIG_PATH:-$HOME/.config/termux-neo/settings.conf}"' &&
+       "${launcher_lines[4]}" == \
+           "TERMUX_NEO_COMMAND_PATH=$command_path_quoted" &&
+       "${launcher_lines[5]}" == \
+           'export TERMUX_NEO_CONFIG_PATH TERMUX_NEO_COMMAND_PATH' &&
+       "${launcher_lines[6]}" == \
+           "exec $bash_command_quoted $runtime_command_quoted \"\$@\"" ]]
 }
 
 termux_neo_update_validate_installed() {
@@ -532,7 +612,8 @@ termux_neo_update_validate_installed() {
         return 1
     }
 
-    [[ -f "$RUNTIME_ROOT/VERSION" && -r "$RUNTIME_ROOT/VERSION" ]] ||
+    [[ -f "$RUNTIME_ROOT/VERSION" && ! -L "$RUNTIME_ROOT/VERSION" &&
+       -r "$RUNTIME_ROOT/VERSION" ]] ||
         return 1
     IFS= read -r runtime_version < "$RUNTIME_ROOT/VERSION" || return 1
     [[ "$runtime_version" == "$CURRENT_VERSION" ]] || {
@@ -661,6 +742,7 @@ termux_neo_update_prepare_runtime() {
         "$STAGE_RUNTIME/config/" || return 1
     cp -p "$SOURCE_ROOT/docs/cli.md" "$SOURCE_ROOT/docs/installation.md" \
         "$SOURCE_ROOT/docs/release-artifacts.md" \
+        "$SOURCE_ROOT/docs/security.md" \
         "$SOURCE_ROOT/docs/settings-schema-v1.md" \
         "$SOURCE_ROOT/docs/update.md" \
         "$SOURCE_ROOT/docs/uninstallation.md" \
@@ -733,21 +815,21 @@ termux_neo_update_prepare_backups() {
 
 termux_neo_update_swap() {
     if (( REPLACE_RUNTIME == 1 )); then
-        mv "$RUNTIME_ROOT" "$RUNTIME_BACKUP/original" || return 1
+        mv -- "$RUNTIME_ROOT" "$RUNTIME_BACKUP/original" || return 1
         OLD_RUNTIME_MOVED=1
-        mv "$STAGE_RUNTIME" "$RUNTIME_ROOT" || return 1
+        mv -- "$STAGE_RUNTIME" "$RUNTIME_ROOT" || return 1
         NEW_RUNTIME_INSTALLED=1
 
-        mv "$COMMAND_PATH" "$COMMAND_BACKUP/original" || return 1
+        mv -- "$COMMAND_PATH" "$COMMAND_BACKUP/original" || return 1
         OLD_COMMAND_MOVED=1
-        mv "$STAGE_LAUNCHER" "$COMMAND_PATH" || return 1
+        mv -- "$STAGE_LAUNCHER" "$COMMAND_PATH" || return 1
         NEW_COMMAND_INSTALLED=1
     fi
 
     if (( CONFIG_MIGRATION == 1 )); then
-        mv "$CONFIG_PATH" "$CONFIG_BACKUP/original" || return 1
+        mv -- "$CONFIG_PATH" "$CONFIG_BACKUP/original" || return 1
         OLD_CONFIG_MOVED=1
-        mv "$STAGE_CONFIG" "$CONFIG_PATH" || return 1
+        mv -- "$STAGE_CONFIG" "$CONFIG_PATH" || return 1
         NEW_CONFIG_INSTALLED=1
     fi
 }
@@ -785,14 +867,14 @@ termux_neo_update_rollback() {
     set +e
 
     if (( NEW_CONFIG_INSTALLED == 1 )); then
-        if rm -f "$CONFIG_PATH"; then
+        if rm -f -- "$CONFIG_PATH"; then
             NEW_CONFIG_INSTALLED=0
         else
             ROLLBACK_FAILED=1
         fi
     fi
     if (( OLD_CONFIG_MOVED == 1 )); then
-        if mv "$CONFIG_BACKUP/original" "$CONFIG_PATH"; then
+        if mv -- "$CONFIG_BACKUP/original" "$CONFIG_PATH"; then
             OLD_CONFIG_MOVED=0
         else
             ROLLBACK_FAILED=1
@@ -800,14 +882,14 @@ termux_neo_update_rollback() {
     fi
 
     if (( NEW_COMMAND_INSTALLED == 1 )); then
-        if rm -f "$COMMAND_PATH"; then
+        if rm -f -- "$COMMAND_PATH"; then
             NEW_COMMAND_INSTALLED=0
         else
             ROLLBACK_FAILED=1
         fi
     fi
     if (( OLD_COMMAND_MOVED == 1 )); then
-        if mv "$COMMAND_BACKUP/original" "$COMMAND_PATH"; then
+        if mv -- "$COMMAND_BACKUP/original" "$COMMAND_PATH"; then
             OLD_COMMAND_MOVED=0
         else
             ROLLBACK_FAILED=1
@@ -815,14 +897,14 @@ termux_neo_update_rollback() {
     fi
 
     if (( NEW_RUNTIME_INSTALLED == 1 )); then
-        if rm -rf "$RUNTIME_ROOT"; then
+        if rm -rf -- "$RUNTIME_ROOT"; then
             NEW_RUNTIME_INSTALLED=0
         else
             ROLLBACK_FAILED=1
         fi
     fi
     if (( OLD_RUNTIME_MOVED == 1 )); then
-        if mv "$RUNTIME_BACKUP/original" "$RUNTIME_ROOT"; then
+        if mv -- "$RUNTIME_BACKUP/original" "$RUNTIME_ROOT"; then
             OLD_RUNTIME_MOVED=0
         else
             ROLLBACK_FAILED=1
@@ -851,19 +933,19 @@ termux_neo_update_cleanup() {
     set +e
 
     [[ -z "$STAGE_LAUNCHER" || ! -e "$STAGE_LAUNCHER" ]] ||
-        rm -f "$STAGE_LAUNCHER"
+        rm -f -- "$STAGE_LAUNCHER"
     [[ -z "$STAGE_CONFIG" || ! -e "$STAGE_CONFIG" ]] ||
-        rm -f "$STAGE_CONFIG"
+        rm -f -- "$STAGE_CONFIG"
     [[ -z "$STAGE_CONTAINER" || ! -e "$STAGE_CONTAINER" ]] ||
-        rm -rf "$STAGE_CONTAINER"
+        rm -rf -- "$STAGE_CONTAINER"
 
     if (( ROLLBACK_FAILED == 0 || UPDATE_COMMITTED == 1 )); then
         [[ -z "$RUNTIME_BACKUP" || ! -e "$RUNTIME_BACKUP" ]] ||
-            rm -rf "$RUNTIME_BACKUP"
+            rm -rf -- "$RUNTIME_BACKUP"
         [[ -z "$COMMAND_BACKUP" || ! -e "$COMMAND_BACKUP" ]] ||
-            rm -rf "$COMMAND_BACKUP"
+            rm -rf -- "$COMMAND_BACKUP"
         [[ -z "$CONFIG_BACKUP" || ! -e "$CONFIG_BACKUP" ]] ||
-            rm -rf "$CONFIG_BACKUP"
+            rm -rf -- "$CONFIG_BACKUP"
     fi
 }
 
@@ -895,6 +977,7 @@ termux_neo_update_report_success() {
 
 termux_neo_update_exit() {
     local status="${1-1}"
+    local report_status=0
 
     trap - EXIT
     set +e
@@ -904,6 +987,11 @@ termux_neo_update_exit() {
     termux_neo_update_cleanup
     if (( REPORT_READY == 1 )); then
         printf 'update report: %s\n' "$UPDATE_REPORT_PATH"
+        termux_neo_update_close_report || report_status=1
+    fi
+    if (( status == 0 && report_status != 0 )); then
+        termux_neo_update_error "update report could not be completed"
+        status=1
     fi
     exit "$status"
 }

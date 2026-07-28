@@ -153,6 +153,7 @@ termux_neo_config_load() {
     termux_neo_config_reset
 
     [[ -n "$config_file" ]] || return 1
+    [[ ! -L "$config_file" ]] || return 1
     [[ -e "$config_file" ]] || return 0
     [[ -f "$config_file" ]] || return 1
     [[ -r "$config_file" ]] || return 1

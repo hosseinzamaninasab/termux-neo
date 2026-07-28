@@ -53,10 +53,10 @@ termux_neo_install_path_is_safe() {
 
     [[ "$value" == /* ]] || return 1
     [[ "$value" != "/" ]] || return 1
-    [[ "$value" != *$'\n'* ]] || return 1
-    [[ "$value" != *$'\r'* ]] || return 1
-    [[ "$value" != *$'\t'* ]] || return 1
-    [[ "$value" != *$'\e'* ]] || return 1
+    [[ "$value" != *"//"* ]] || return 1
+    [[ "$value" != *"/./"* && "$value" != */. ]] || return 1
+    [[ "$value" != *"/../"* && "$value" != */.. ]] || return 1
+    [[ ! "$value" =~ [[:cntrl:]] ]]
 }
 
 termux_neo_install_require_tools() {
@@ -101,7 +101,8 @@ termux_neo_install_validate_environment() {
         termux_neo_install_error "Termux Bash is unavailable at PREFIX/bin/bash"
         return 1
     }
-    [[ "$SOURCE_ROOT" != "$RUNTIME_ROOT" ]] || {
+    [[ "$SOURCE_ROOT" != "$RUNTIME_ROOT" &&
+       "$SOURCE_ROOT" != "$RUNTIME_ROOT/"* ]] || {
         termux_neo_install_error "the installer cannot replace its own source tree"
         return 1
     }
@@ -111,6 +112,7 @@ termux_neo_install_validate_source() {
     local required_path=""
     local shell_file=""
     local version=""
+    local unexpected_link=""
 
     for required_path in \
         "$SOURCE_ROOT/VERSION" \
@@ -123,6 +125,7 @@ termux_neo_install_validate_source() {
         "$SOURCE_ROOT/docs/cli.md" \
         "$SOURCE_ROOT/docs/installation.md" \
         "$SOURCE_ROOT/docs/release-artifacts.md" \
+        "$SOURCE_ROOT/docs/security.md" \
         "$SOURCE_ROOT/docs/settings-schema-v1.md" \
         "$SOURCE_ROOT/docs/update.md" \
         "$SOURCE_ROOT/docs/uninstallation.md" \
@@ -131,11 +134,37 @@ termux_neo_install_validate_source() {
         "$SOURCE_ROOT/src/release.sh" \
         "$SOURCE_ROOT/src/startup_integration.sh"
     do
-        [[ -f "$required_path" && -r "$required_path" ]] || {
+        [[ -f "$required_path" && ! -L "$required_path" &&
+           -r "$required_path" ]] || {
             termux_neo_install_error "required source file is unavailable: $required_path"
             return 1
         }
     done
+
+    unexpected_link="$(
+        find \
+            "$SOURCE_ROOT/VERSION" \
+            "$SOURCE_ROOT/LICENSE" \
+            "$SOURCE_ROOT/README.md" \
+            "$SOURCE_ROOT/update.sh" \
+            "$SOURCE_ROOT/uninstall.sh" \
+            "$SOURCE_ROOT/bin" \
+            "$SOURCE_ROOT/config/settings.example.conf" \
+            "$SOURCE_ROOT/docs/cli.md" \
+            "$SOURCE_ROOT/docs/installation.md" \
+            "$SOURCE_ROOT/docs/release-artifacts.md" \
+            "$SOURCE_ROOT/docs/security.md" \
+            "$SOURCE_ROOT/docs/settings-schema-v1.md" \
+            "$SOURCE_ROOT/docs/update.md" \
+            "$SOURCE_ROOT/docs/uninstallation.md" \
+            "$SOURCE_ROOT/src" \
+            -type l -print -quit
+    )" || return 1
+    [[ -z "$unexpected_link" ]] || {
+        termux_neo_install_error \
+            "source tree contains a symbolic link: $unexpected_link"
+        return 1
+    }
 
     IFS= read -r version < "$SOURCE_ROOT/VERSION" || return 1
     [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || {
@@ -170,33 +199,48 @@ termux_neo_install_validate_source() {
 }
 
 termux_neo_install_runtime_is_owned() {
-    local first_line=""
-    local second_line=""
     local manifest="$RUNTIME_ROOT/INSTALL_MANIFEST"
+    local -a manifest_lines=()
 
     [[ -d "$RUNTIME_ROOT" && ! -L "$RUNTIME_ROOT" ]] || return 1
     [[ -f "$manifest" && ! -L "$manifest" && -r "$manifest" ]] || return 1
-    {
-        IFS= read -r first_line
-        IFS= read -r second_line
-    } < "$manifest" || return 1
+    mapfile -t manifest_lines < "$manifest" || return 1
 
-    [[ "$first_line" == "format=1" && "$second_line" == "product=termux-neo" ]]
+    (( ${#manifest_lines[@]} == 6 )) || return 1
+    [[ "${manifest_lines[0]}" == "format=1" &&
+       "${manifest_lines[1]}" == "product=termux-neo" &&
+       "${manifest_lines[2]}" =~ ^version=[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ &&
+       "${manifest_lines[3]}" == "runtime_root=$RUNTIME_ROOT" &&
+       "${manifest_lines[4]}" == "command_path=$COMMAND_PATH" &&
+       "${manifest_lines[5]}" == "config_path=$CONFIG_PATH" ]]
 }
 
 termux_neo_install_command_is_owned() {
-    local first_line=""
-    local second_line=""
+    local bash_command_quoted=""
+    local runtime_command_quoted=""
+    local command_path_quoted=""
+    local -a launcher_lines=()
 
-    [[ -f "$COMMAND_PATH" && ! -L "$COMMAND_PATH" && -r "$COMMAND_PATH" ]] ||
-        return 1
-    {
-        IFS= read -r first_line
-        IFS= read -r second_line
-    } < "$COMMAND_PATH" || return 1
+    [[ -f "$COMMAND_PATH" && ! -L "$COMMAND_PATH" &&
+       -r "$COMMAND_PATH" && -x "$COMMAND_PATH" ]] || return 1
+    mapfile -t launcher_lines < "$COMMAND_PATH" || return 1
 
-    [[ "$first_line" == "#!$INSTALL_PREFIX/bin/bash" &&
-       "$second_line" == '# Termux Neo installed launcher v1' ]]
+    printf -v bash_command_quoted '%q' "$INSTALL_PREFIX/bin/bash"
+    printf -v runtime_command_quoted '%q' "$RUNTIME_ROOT/src/main.sh"
+    printf -v command_path_quoted '%q' "$COMMAND_PATH"
+
+    (( ${#launcher_lines[@]} == 7 )) || return 1
+    [[ "${launcher_lines[0]}" == "#!$INSTALL_PREFIX/bin/bash" &&
+       "${launcher_lines[1]}" == '# Termux Neo installed launcher v1' &&
+       "${launcher_lines[2]}" == 'set -e' &&
+       "${launcher_lines[3]}" == \
+           'TERMUX_NEO_CONFIG_PATH="${TERMUX_NEO_CONFIG_PATH:-$HOME/.config/termux-neo/settings.conf}"' &&
+       "${launcher_lines[4]}" == \
+           "TERMUX_NEO_COMMAND_PATH=$command_path_quoted" &&
+       "${launcher_lines[5]}" == \
+           'export TERMUX_NEO_CONFIG_PATH TERMUX_NEO_COMMAND_PATH' &&
+       "${launcher_lines[6]}" == \
+           "exec $bash_command_quoted $runtime_command_quoted \"\$@\"" ]]
 }
 
 termux_neo_install_check_existing_targets() {
@@ -215,7 +259,8 @@ termux_neo_install_check_existing_targets() {
     fi
 
     if [[ -e "$CONFIG_PATH" || -L "$CONFIG_PATH" ]]; then
-        [[ -f "$CONFIG_PATH" && -r "$CONFIG_PATH" ]] || {
+        [[ -f "$CONFIG_PATH" && ! -L "$CONFIG_PATH" &&
+           -r "$CONFIG_PATH" ]] || {
             termux_neo_install_error "existing configuration is not a readable file: $CONFIG_PATH"
             return 1
         }
@@ -292,6 +337,7 @@ termux_neo_install_prepare_runtime() {
     cp -p "$SOURCE_ROOT/config/settings.example.conf" "$STAGE_RUNTIME/config/"
     cp -p "$SOURCE_ROOT/docs/cli.md" "$SOURCE_ROOT/docs/installation.md" \
         "$SOURCE_ROOT/docs/release-artifacts.md" \
+        "$SOURCE_ROOT/docs/security.md" \
         "$SOURCE_ROOT/docs/settings-schema-v1.md" "$SOURCE_ROOT/docs/update.md" \
         "$SOURCE_ROOT/docs/uninstallation.md" \
         "$STAGE_RUNTIME/docs/"
@@ -361,21 +407,21 @@ termux_neo_install_prepare_backups() {
 
 termux_neo_install_swap() {
     if [[ -n "$RUNTIME_BACKUP" ]]; then
-        mv "$RUNTIME_ROOT" "$RUNTIME_BACKUP/original"
+        mv -- "$RUNTIME_ROOT" "$RUNTIME_BACKUP/original"
         OLD_RUNTIME_MOVED=1
     fi
-    mv "$STAGE_RUNTIME" "$RUNTIME_ROOT"
+    mv -- "$STAGE_RUNTIME" "$RUNTIME_ROOT"
     NEW_RUNTIME_INSTALLED=1
 
     if [[ -n "$COMMAND_BACKUP" ]]; then
-        mv "$COMMAND_PATH" "$COMMAND_BACKUP/original"
+        mv -- "$COMMAND_PATH" "$COMMAND_BACKUP/original"
         OLD_COMMAND_MOVED=1
     fi
-    mv "$STAGE_LAUNCHER" "$COMMAND_PATH"
+    mv -- "$STAGE_LAUNCHER" "$COMMAND_PATH"
     NEW_COMMAND_INSTALLED=1
 
     if [[ -n "$STAGE_CONFIG" ]]; then
-        mv "$STAGE_CONFIG" "$CONFIG_PATH"
+        mv -- "$STAGE_CONFIG" "$CONFIG_PATH"
         CONFIG_CREATED=1
     fi
 }
@@ -407,7 +453,7 @@ termux_neo_install_rollback() {
     set +e
 
     if (( CONFIG_CREATED == 1 )); then
-        if rm -f "$CONFIG_PATH"; then
+        if rm -f -- "$CONFIG_PATH"; then
             CONFIG_CREATED=0
         else
             ROLLBACK_FAILED=1
@@ -415,14 +461,14 @@ termux_neo_install_rollback() {
     fi
 
     if (( NEW_COMMAND_INSTALLED == 1 )); then
-        if rm -f "$COMMAND_PATH"; then
+        if rm -f -- "$COMMAND_PATH"; then
             NEW_COMMAND_INSTALLED=0
         else
             ROLLBACK_FAILED=1
         fi
     fi
     if (( OLD_COMMAND_MOVED == 1 )); then
-        if mv "$COMMAND_BACKUP/original" "$COMMAND_PATH"; then
+        if mv -- "$COMMAND_BACKUP/original" "$COMMAND_PATH"; then
             OLD_COMMAND_MOVED=0
         else
             ROLLBACK_FAILED=1
@@ -430,14 +476,14 @@ termux_neo_install_rollback() {
     fi
 
     if (( NEW_RUNTIME_INSTALLED == 1 )); then
-        if rm -rf "$RUNTIME_ROOT"; then
+        if rm -rf -- "$RUNTIME_ROOT"; then
             NEW_RUNTIME_INSTALLED=0
         else
             ROLLBACK_FAILED=1
         fi
     fi
     if (( OLD_RUNTIME_MOVED == 1 )); then
-        if mv "$RUNTIME_BACKUP/original" "$RUNTIME_ROOT"; then
+        if mv -- "$RUNTIME_BACKUP/original" "$RUNTIME_ROOT"; then
             OLD_RUNTIME_MOVED=0
         else
             ROLLBACK_FAILED=1
@@ -459,23 +505,23 @@ termux_neo_install_cleanup() {
     set +e
 
     [[ -z "$STAGE_LAUNCHER" || ! -e "$STAGE_LAUNCHER" ]] ||
-        rm -f "$STAGE_LAUNCHER"
+        rm -f -- "$STAGE_LAUNCHER"
     [[ -z "$STAGE_CONFIG" || ! -e "$STAGE_CONFIG" ]] ||
-        rm -f "$STAGE_CONFIG"
+        rm -f -- "$STAGE_CONFIG"
     [[ -z "$STAGE_CONTAINER" || ! -e "$STAGE_CONTAINER" ]] ||
-        rm -rf "$STAGE_CONTAINER"
+        rm -rf -- "$STAGE_CONTAINER"
     if (( ROLLBACK_FAILED == 0 || INSTALL_COMMITTED == 1 )); then
         [[ -z "$RUNTIME_BACKUP" || ! -e "$RUNTIME_BACKUP" ]] ||
-            rm -rf "$RUNTIME_BACKUP"
+            rm -rf -- "$RUNTIME_BACKUP"
         [[ -z "$COMMAND_BACKUP" || ! -e "$COMMAND_BACKUP" ]] ||
-            rm -rf "$COMMAND_BACKUP"
+            rm -rf -- "$COMMAND_BACKUP"
     fi
 
     if (( INSTALL_COMMITTED == 0 )); then
-        (( CREATED_CONFIG_DIR == 0 )) || rmdir "$CONFIG_DIR" 2>/dev/null
-        (( CREATED_CONFIG_PARENT == 0 )) || rmdir "$CONFIG_PARENT" 2>/dev/null
-        (( CREATED_BIN_PARENT == 0 )) || rmdir "$BIN_PARENT" 2>/dev/null
-        (( CREATED_LIB_PARENT == 0 )) || rmdir "$LIB_PARENT" 2>/dev/null
+        (( CREATED_CONFIG_DIR == 0 )) || rmdir -- "$CONFIG_DIR" 2>/dev/null
+        (( CREATED_CONFIG_PARENT == 0 )) || rmdir -- "$CONFIG_PARENT" 2>/dev/null
+        (( CREATED_BIN_PARENT == 0 )) || rmdir -- "$BIN_PARENT" 2>/dev/null
+        (( CREATED_LIB_PARENT == 0 )) || rmdir -- "$LIB_PARENT" 2>/dev/null
     fi
 }
 
