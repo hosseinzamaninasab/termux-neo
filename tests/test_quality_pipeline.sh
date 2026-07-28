@@ -14,16 +14,19 @@ fail() {
     exit 1
 }
 
-bash -n scripts/quality-check.sh scripts/smoke-release.sh ||
+bash -n \
+    scripts/performance-check.sh \
+    scripts/quality-check.sh \
+    scripts/smoke-release.sh ||
     fail "quality scripts failed syntax validation"
 
 bash scripts/quality-check.sh --list > "$list_file" 2> "$stderr_file" ||
     fail "quality test registry could not be listed"
 [[ ! -s "$stderr_file" ]] ||
     fail "quality test registry produced stderr"
-[[ "$(wc -l < "$list_file")" == "22" ]] ||
-    fail "quality registry does not contain 22 tests"
-[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "22" ]] ||
+[[ "$(wc -l < "$list_file")" == "23" ]] ||
+    fail "quality registry does not contain 23 tests"
+[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "23" ]] ||
     fail "quality registry contains duplicate tests"
 
 while IFS= read -r test_path; do
@@ -74,6 +77,10 @@ grep -Fq 'Device-only verification checklist' docs/quality.md ||
     fail "device-only checklist is missing"
 grep -Fq 'bash scripts/smoke-release.sh' docs/quality.md ||
     fail "artifact smoke command is undocumented"
+grep -Fq 'bash scripts/performance-check.sh --self-test' docs/quality.md ||
+    fail "portable performance command is undocumented"
+grep -Fq 'CI does not establish reference-device timing' docs/quality.md ||
+    fail "CI/performance evidence boundary is undocumented"
 
 grep -Fq '"$SOURCE_ROOT/scripts/smoke-release.sh"' \
     scripts/package-release.sh ||

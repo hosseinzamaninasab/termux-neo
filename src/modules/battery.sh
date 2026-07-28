@@ -4,11 +4,17 @@
 # Termux Neo - Battery Data Module
 # ==========================================================
 
+MODULE_BATTERY_SELECTED_CACHE_READY=0
+MODULE_BATTERY_SELECTED_CACHE=""
+
 module_battery_from_termux_api() {
     local raw="" percentage="" status=""
     module_command_exists termux-battery-status || return 1
 
-    raw="$(termux-battery-status 2>/dev/null || true)"
+    raw="$(
+        module_run_bounded_ipc_probe termux-battery-status \
+            2>/dev/null || true
+    )"
     [[ -n "$raw" ]] || return 1
 
     percentage="$(printf '%s\n' "$raw" | sed -n 's/.*"percentage"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -n 1)"
@@ -80,7 +86,10 @@ module_battery_from_dumpsys() {
     local raw="" percentage="" status_code="" powered="" status=""
     module_command_exists dumpsys || return 1
 
-    raw="$(dumpsys battery 2>/dev/null || true)"
+    raw="$(
+        module_run_bounded_ipc_probe dumpsys battery \
+            2>/dev/null || true
+    )"
     [[ -n "$raw" ]] || return 1
 
     percentage="$(printf '%s\n' "$raw" | sed -n 's/^[[:space:]]*level:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -n 1)"
@@ -115,7 +124,7 @@ module_battery_format_record() {
     printf '%s%s' "$percentage" "$suffix"
 }
 
-module_battery_selected_record() {
+module_battery_selected_record_uncached() {
     local record=""
 
     record="$(module_battery_from_termux_api 2>/dev/null || true)"
@@ -137,6 +146,32 @@ module_battery_selected_record() {
     fi
 
     printf 'unavailable|'
+}
+
+module_battery_selected_record() {
+    if (( MODULE_BATTERY_SELECTED_CACHE_READY == 1 )); then
+        printf '%s' "$MODULE_BATTERY_SELECTED_CACHE"
+        return 0
+    fi
+
+    module_battery_selected_record_uncached
+}
+
+module_battery_prepare_render_cache() {
+    local selected=""
+
+    selected="$(
+        module_battery_selected_record_uncached 2>/dev/null || true
+    )"
+    [[ "$selected" == *"|"* ]] || selected="unavailable|"
+
+    MODULE_BATTERY_SELECTED_CACHE="$selected"
+    MODULE_BATTERY_SELECTED_CACHE_READY=1
+}
+
+module_battery_clear_render_cache() {
+    MODULE_BATTERY_SELECTED_CACHE=""
+    MODULE_BATTERY_SELECTED_CACHE_READY=0
 }
 
 module_battery_source() {

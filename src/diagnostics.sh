@@ -110,6 +110,11 @@ termux_neo_diagnose() {
     optional_dumpsys="$(termux_neo_diagnostic_command_status dumpsys)"
     optional_getprop="$(termux_neo_diagnostic_command_status getprop)"
 
+    module_network_clear_render_cache
+    module_battery_clear_render_cache
+    module_network_prepare_render_cache
+    module_battery_prepare_render_cache
+
     system_user="$(termux_neo_collect_value module_device_user "User")"
     display_user="$(
         termux_neo_config_resolve_display_user \
@@ -130,6 +135,9 @@ termux_neo_diagnose() {
         termux_neo_collect_value module_battery_source "unavailable"
     )"
     time_value="$(termux_neo_collect_value module_time_value "--:--")"
+
+    module_network_clear_render_cache
+    module_battery_clear_render_cache
 
     case "$network_state" in
         UP|DOWN) ;;

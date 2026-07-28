@@ -42,7 +42,10 @@ fail() {
 cp -p VERSION LICENSE README.md install.sh update.sh uninstall.sh \
     "$source_fixture/"
 cp -pR bin config docs src "$source_fixture/"
-cp -p scripts/package-release.sh scripts/smoke-release.sh \
+cp -p \
+    scripts/package-release.sh \
+    scripts/performance-check.sh \
+    scripts/smoke-release.sh \
     "$source_fixture/scripts/"
 [[ ! -e "$source_fixture/.git" ]] ||
     fail "release source fixture unexpectedly contains Git metadata"
@@ -143,8 +146,21 @@ cmp -s "$output_a/$checksum_name" "$output_c/$checksum_name" ||
     fail "packaged uninstaller mode is not 755"
 [[ "$(stat -c '%a' "$package_root/scripts/package-release.sh")" == "755" ]] ||
     fail "packaged release builder mode is not 755"
+[[ "$(stat -c '%a' "$package_root/scripts/performance-check.sh")" == "755" ]] ||
+    fail "packaged performance check mode is not 755"
 [[ "$(stat -c '%a' "$package_root/scripts/smoke-release.sh")" == "755" ]] ||
     fail "packaged release smoke mode is not 755"
+
+TMPDIR="$fixture" \
+    bash "$package_root/scripts/performance-check.sh" --self-test \
+        > "$fixture/performance.stdout" 2> "$fixture/performance.stderr" ||
+    fail "extracted release performance self-test failed"
+[[ ! -s "$fixture/performance.stderr" ]] ||
+    fail "extracted release performance self-test produced stderr"
+grep -Fqx \
+    'PASS: deterministic repeated-render stability, jobs, children, and file descriptors' \
+    "$fixture/performance.stdout" ||
+    fail "extracted release performance success line is missing"
 
 bash "$package_root/scripts/smoke-release.sh" \
     > "$fixture/smoke.stdout" 2> "$fixture/smoke.stderr" ||

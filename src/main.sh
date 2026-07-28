@@ -92,6 +92,11 @@ termux_neo_prepare_state() {
         "$TERMUX_NEO_CONFIG_THEME" \
         "$TERMUX_NEO_CONFIG_COLOR_MODE" || return 1
 
+    module_network_clear_render_cache
+    module_battery_clear_render_cache
+    module_network_prepare_render_cache
+    module_battery_prepare_render_cache
+
     system_user="$(termux_neo_collect_value module_device_user "User")"
     display_user="$(
         termux_neo_config_resolve_display_user \
@@ -107,6 +112,9 @@ termux_neo_prepare_state() {
     battery="$(termux_neo_collect_value module_battery_value "--")"
     time_value="$(termux_neo_collect_value module_time_value "--:--")"
     prompt_path="$(termux_neo_prompt_path)"
+
+    module_network_clear_render_cache
+    module_battery_clear_render_cache
 
     case "$network_state" in
         UP|DOWN) ;;

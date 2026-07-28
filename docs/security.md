@@ -71,6 +71,9 @@ the color renderer after numeric SGR validation.
 Optional device probes suppress their own raw stderr. Application and usage
 errors still use the documented stderr boundary. Render-once output is
 assembled before printing, so a renderer failure emits no partial dashboard.
+The two IPC-backed battery probes run through a foreground timeout with a
+kill-after boundary; timeout failure is silent and continues to the existing
+sysfs or unavailable fallback.
 
 Diagnostics are explicit and bounded; they do not dump the environment or
 search for secrets. A diagnostic report does include the selected config and

@@ -138,6 +138,8 @@ tput() {
 module_device_user() { printf 'u0_smoke'; }
 module_device_name() { printf 'Smoke Device'; }
 module_system_name() { printf 'Android Smoke'; }
+module_network_prepare_render_cache() { :; }
+module_battery_prepare_render_cache() { :; }
 module_network_type() { printf 'Wi-Fi'; }
 module_network_local_ip() { printf '192.0.2.1'; }
 module_network_state() { printf 'UP'; }

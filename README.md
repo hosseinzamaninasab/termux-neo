@@ -30,6 +30,10 @@ The reviewed trust model, parser and filesystem boundaries, diagnostic
 disclosure, release-integrity chain, and residual limitations are documented
 in [docs/security.md](docs/security.md).
 
+The render-once performance model, cycle-local probe caches, bounded IPC
+paths, portable stability gate, and measured reference-device startup baseline
+are documented in [docs/performance.md](docs/performance.md).
+
 After installation:
 
 ```bash

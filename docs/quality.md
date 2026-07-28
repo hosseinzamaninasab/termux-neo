@@ -16,7 +16,7 @@ analysis when ShellCheck is available, and the complete test suite.
 | --- | --- |
 | Unit | CLI, configuration, layout, colors, content, renderers, and UI |
 | Fixtures | Compatibility, module fallbacks, and safe data modules |
-| Integration | Diagnostics, render-once flow, startup, pipeline, and security/failure-safety contracts |
+| Integration | Diagnostics, render-once flow, startup, pipeline, security/failure-safety, and performance/stability contracts |
 | Package | Reproducible artifact lifecycle and internal artifact smoke test |
 | Lifecycle | Installer, updater, and uninstaller transactions |
 
@@ -27,6 +27,19 @@ permission. It covers only logic that can run on a non-Android Bash host.
 CI does not establish device compatibility and does not replace reference
 device testing. A portable green result must never be recorded as device
 evidence.
+
+The portable stability gate can also be run directly:
+
+```bash
+bash scripts/performance-check.sh --self-test
+```
+
+It checks deterministic repeated rendering, child processes, background jobs,
+and file descriptors with fixed inputs.
+CI does not establish reference-device timing. The measured Samsung
+`SM-N920C` before/after result and its
+measurement-derived budget are recorded separately in
+[`performance-baseline.md`](performance-baseline.md).
 
 ## Release artifact smoke verification
 

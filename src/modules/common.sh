@@ -4,8 +4,27 @@
 # Termux Neo - Module Safety Helpers
 # ==========================================================
 
+MODULE_IPC_PROBE_TIMEOUT="2s"
+MODULE_IPC_PROBE_KILL_AFTER="1s"
+
 module_command_exists() {
     command -v "$1" >/dev/null 2>&1
+}
+
+module_run_bounded_ipc_probe() {
+    local command_name="${1-}"
+
+    shift || return 1
+
+    [[ "$command_name" =~ ^[A-Za-z0-9._+-]+$ ]] || return 1
+    module_command_exists "$command_name" || return 127
+    module_command_exists timeout || return 127
+
+    timeout \
+        --signal=TERM \
+        --kill-after="$MODULE_IPC_PROBE_KILL_AFTER" \
+        "$MODULE_IPC_PROBE_TIMEOUT" \
+        "$command_name" "$@"
 }
 
 module_clean_value() {

@@ -4,6 +4,9 @@
 # Termux Neo - Network Data Module
 # ==========================================================
 
+MODULE_NETWORK_PRIMARY_CACHE_READY=0
+MODULE_NETWORK_PRIMARY_CACHE=""
+
 module_is_ipv4_address() {
     local address="${1-}"
     local a b c d
@@ -17,7 +20,7 @@ module_is_ipv4_address() {
     (( d >= 0 && d <= 255 ))
 }
 
-module_network_primary_interface() {
+module_network_primary_interface_uncached() {
     local interface=""
     local network_root=""
     local route=""
@@ -51,6 +54,35 @@ module_network_primary_interface() {
 
     [[ -n "$interface" ]] || return 1
     printf '%s' "$interface"
+}
+
+module_network_primary_interface() {
+    if (( MODULE_NETWORK_PRIMARY_CACHE_READY == 1 )); then
+        [[ -n "$MODULE_NETWORK_PRIMARY_CACHE" ]] || return 1
+        printf '%s' "$MODULE_NETWORK_PRIMARY_CACHE"
+        return 0
+    fi
+
+    module_network_primary_interface_uncached
+}
+
+module_network_prepare_render_cache() {
+    local interface=""
+
+    interface="$(
+        module_network_primary_interface_uncached 2>/dev/null || true
+    )"
+    if ! module_interface_name_is_safe "$interface"; then
+        interface=""
+    fi
+
+    MODULE_NETWORK_PRIMARY_CACHE="$interface"
+    MODULE_NETWORK_PRIMARY_CACHE_READY=1
+}
+
+module_network_clear_render_cache() {
+    MODULE_NETWORK_PRIMARY_CACHE=""
+    MODULE_NETWORK_PRIMARY_CACHE_READY=0
 }
 
 module_network_state() {
