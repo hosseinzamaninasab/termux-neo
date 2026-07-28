@@ -17,10 +17,10 @@ test_prefix="$termux_files/usr"
 runtime_root="$test_prefix/lib/termux-neo"
 command_path="$test_prefix/bin/termux-neo"
 config_path="$test_home/.config/termux-neo/settings.conf"
-archive_name="termux-neo-0.5.0-beta.tar.gz"
+archive_name="termux-neo-0.9.0-beta.tar.gz"
 checksum_name="$archive_name.sha256"
-report_name="termux-neo-0.5.0-beta-release-report.txt"
-package_root="$extract_root/termux-neo-0.5.0-beta"
+report_name="termux-neo-0.9.0-beta-release-report.txt"
+package_root="$extract_root/termux-neo-0.9.0-beta"
 
 mkdir -p \
     "$source_fixture/scripts" \
@@ -44,6 +44,7 @@ cp -p VERSION LICENSE README.md install.sh update.sh uninstall.sh \
 cp -pR bin config docs src "$source_fixture/"
 cp -p \
     scripts/package-release.sh \
+    scripts/beta-field-test.sh \
     scripts/performance-check.sh \
     scripts/smoke-release.sh \
     "$source_fixture/scripts/"
@@ -106,7 +107,7 @@ cmp -s "$output_a/$checksum_name" "$output_b/$checksum_name" ||
     fail "two clean builds produced different checksum bytes"
 
 tar -tzf "$output_a/$archive_name" > "$fixture/archive-list"
-grep -Fqx 'termux-neo-0.5.0-beta/RELEASE_MANIFEST.sha256' \
+grep -Fqx 'termux-neo-0.9.0-beta/RELEASE_MANIFEST.sha256' \
     "$fixture/archive-list" ||
     fail "internal release manifest is missing from the archive"
 if grep -Eq '(^/|(^|/)\.\.(/|$)|(^|/)\.git(/|$)|(^|/)tests(/|$))' \
@@ -146,6 +147,8 @@ cmp -s "$output_a/$checksum_name" "$output_c/$checksum_name" ||
     fail "packaged uninstaller mode is not 755"
 [[ "$(stat -c '%a' "$package_root/scripts/package-release.sh")" == "755" ]] ||
     fail "packaged release builder mode is not 755"
+[[ "$(stat -c '%a' "$package_root/scripts/beta-field-test.sh")" == "755" ]] ||
+    fail "packaged beta field test mode is not 755"
 [[ "$(stat -c '%a' "$package_root/scripts/performance-check.sh")" == "755" ]] ||
     fail "packaged performance check mode is not 755"
 [[ "$(stat -c '%a' "$package_root/scripts/smoke-release.sh")" == "755" ]] ||
@@ -161,6 +164,27 @@ grep -Fqx \
     'PASS: deterministic repeated-render stability, jobs, children, and file descriptors' \
     "$fixture/performance.stdout" ||
     fail "extracted release performance success line is missing"
+
+set +e
+TMPDIR="$fixture" \
+    bash "$package_root/scripts/beta-field-test.sh" --self-test \
+        > "$fixture/beta.stdout" 2> "$fixture/beta.stderr"
+beta_status=$?
+set -e
+if (( beta_status != 0 )); then
+    printf '%s\n' \
+        '--- extracted release beta stdout ---' >&2
+    sed -n '1,120p' "$fixture/beta.stdout" >&2
+    printf '%s\n' \
+        '--- extracted release beta stderr ---' >&2
+    sed -n '1,120p' "$fixture/beta.stderr" >&2
+    fail "extracted release beta field self-test failed"
+fi
+[[ ! -s "$fixture/beta.stderr" ]] ||
+    fail "extracted release beta field self-test produced stderr"
+grep -Fqx 'PASS: portable public beta field matrix (10 scenarios)' \
+    "$fixture/beta.stdout" ||
+    fail "extracted release beta success line is missing"
 
 bash "$package_root/scripts/smoke-release.sh" \
     > "$fixture/smoke.stdout" 2> "$fixture/smoke.stderr" ||
@@ -220,7 +244,7 @@ HOME="$test_home" PREFIX="$test_prefix" PATH="$test_path" \
     fail "packaged clean install failed"
 [[ ! -s "$fixture/install.stderr" ]] ||
     fail "packaged clean install produced stderr"
-[[ "$("$command_path" --version)" == "termux-neo 0.5.0-beta" ]] ||
+[[ "$("$command_path" --version)" == "termux-neo 0.9.0-beta" ]] ||
     fail "packaged command version mismatch"
 [[ -f "$runtime_root/INSTALL_MANIFEST" ]] ||
     fail "packaged clean install has no ownership manifest"
@@ -246,7 +270,7 @@ HOME="$test_home" PREFIX="$test_prefix" PATH="$test_path" \
     fail "packaged update produced stderr"
 grep -Fqx 'version relation: upgrade' "$fixture/update.stdout" ||
     fail "packaged update relation mismatch"
-[[ "$("$command_path" --version)" == "termux-neo 0.5.0-beta" ]] ||
+[[ "$("$command_path" --version)" == "termux-neo 0.9.0-beta" ]] ||
     fail "packaged update version mismatch"
 cmp -s "$config_path" "$fixture/settings-before-update" ||
     fail "packaged update changed settings bytes"

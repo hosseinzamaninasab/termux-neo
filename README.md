@@ -3,6 +3,8 @@
 Termux Neo is a modular, render-once CLI dashboard for Termux. It does not
 require root, replace the shell prompt, start a daemon, or run a refresh loop.
 
+Current release checkpoint: `0.9.0-beta`. Feature Freeze is active.
+
 ## Install
 
 From a complete source tree or a verified extracted release archive:
@@ -33,6 +35,11 @@ in [docs/security.md](docs/security.md).
 The render-once performance model, cycle-local probe caches, bounded IPC
 paths, portable stability gate, and measured reference-device startup baseline
 are documented in [docs/performance.md](docs/performance.md).
+
+The isolated public-beta matrix, redacted field-report contract, issue ledger,
+and active release-branch rules are documented in
+[docs/beta-testing.md](docs/beta-testing.md) and
+[docs/feature-freeze.md](docs/feature-freeze.md).
 
 After installation:
 

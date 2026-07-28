@@ -18,12 +18,12 @@ also accepted:
 bash scripts/package-release.sh "$HOME/storage/downloads/Telegram"
 ```
 
-For version `0.5.0-beta`, the command creates:
+For version `0.9.0-beta`, the command creates:
 
 ```text
-termux-neo-0.5.0-beta.tar.gz
-termux-neo-0.5.0-beta.tar.gz.sha256
-termux-neo-0.5.0-beta-release-report.txt
+termux-neo-0.9.0-beta.tar.gz
+termux-neo-0.9.0-beta.tar.gz.sha256
+termux-neo-0.9.0-beta-release-report.txt
 ```
 
 The archive is reproducible: file order, timestamps, ownership metadata, and
@@ -39,16 +39,17 @@ Place both published files in the fixed download directory, then run:
 
 ```bash
 cd "$HOME/storage/downloads/Telegram"
-sha256sum -c termux-neo-0.5.0-beta.tar.gz.sha256
+sha256sum -c termux-neo-0.9.0-beta.tar.gz.sha256
 extract_parent="$(
     mktemp -d "$HOME/storage/downloads/Telegram/termux-neo-extract.XXXXXX"
 )"
 tar --extract --gzip --same-permissions \
-    --file termux-neo-0.5.0-beta.tar.gz \
+    --file termux-neo-0.9.0-beta.tar.gz \
     --directory "$extract_parent"
-cd "$extract_parent/termux-neo-0.5.0-beta"
+cd "$extract_parent/termux-neo-0.9.0-beta"
 sha256sum -c RELEASE_MANIFEST.sha256
 bash scripts/smoke-release.sh
+bash scripts/beta-field-test.sh --self-test
 bash install.sh
 ```
 
@@ -68,6 +69,11 @@ fails, any half-published counterpart is removed.
 The packaged smoke script checks runtime syntax, version/help dispatch, and a
 deterministic no-color render. It reads the extracted tree and uses a private
 temporary home; it does not install or modify user settings.
+
+The packaged performance script checks repeated-render stability. The packaged
+beta script adds an isolated ten-scenario lifecycle and fallback matrix.
+`--self-test` is portable; `--record` additionally requires an interactive real
+Termux terminal and produces redacted device evidence.
 
 The extracted tree contains no `.git` directory and does not require Git.
 It remains a complete local lifecycle source:

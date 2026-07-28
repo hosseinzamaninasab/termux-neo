@@ -78,7 +78,7 @@ cmp -s config/settings.example.conf "$config_path" ||
     fail "first install did not create settings from the example"
 [[ "$(stat -c '%a' "$config_path")" == "600" ]] ||
     fail "new user settings mode is not 600"
-[[ "$($command_path --version)" == "termux-neo 0.5.0-beta" ]] ||
+[[ "$($command_path --version)" == "termux-neo 0.9.0-beta" ]] ||
     fail "installed version command failed"
 [[ "$(HOME="$test_home" $command_path --config)" == "$config_path" ]] ||
     fail "installed launcher did not select the user settings path"

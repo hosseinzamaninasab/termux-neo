@@ -16,9 +16,11 @@ distribution, hardware, or shell-support claim.
 | Termux distribution | Channel and package version not recorded | No distribution-specific claim |
 
 The Task 24 apply gate reads the device model and Android release from the
-actual reference device. A fixture cannot satisfy that gate. Other rows are
-rechecked by the portable compatibility test and the existing integration and
-startup tests.
+actual reference device. Task 27 adds measured startup evidence, and Task 28
+adds an isolated artifact lifecycle plus physical portrait/landscape terminal
+record in [beta-field-report.md](beta-field-report.md). A fixture cannot
+satisfy any of those device gates. Other rows are rechecked by the portable
+compatibility test and the existing integration and startup tests.
 
 ## Portable compatibility scenarios
 
@@ -36,6 +38,12 @@ The network cases use a test-only `TERMUX_NEO_NET_CLASS_ROOT` input. Production
 execution leaves it unset and reads `/sys/class/net`. Battery fixtures use the
 existing `TERMUX_NEO_POWER_SUPPLY_ROOT` input. Neither input is a user setting
 or a persisted configuration key.
+
+The Task 28 field matrix records one real device at this checkpoint. Its
+offline and permission-denied cases are deterministic inputs; its portrait and
+landscape widths come from interactive terminal rotation. Multiple devices are
+accepted when reports are available, but no additional device was available
+for this checkpoint. One device must not be generalized into wider support.
 
 ## Explicitly unverified
 

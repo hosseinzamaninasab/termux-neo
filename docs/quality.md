@@ -16,7 +16,7 @@ analysis when ShellCheck is available, and the complete test suite.
 | --- | --- |
 | Unit | CLI, configuration, layout, colors, content, renderers, and UI |
 | Fixtures | Compatibility, module fallbacks, and safe data modules |
-| Integration | Diagnostics, render-once flow, startup, pipeline, security/failure-safety, and performance/stability contracts |
+| Integration | Diagnostics, render-once flow, startup, pipeline, security/failure-safety, performance/stability, and public-beta contracts |
 | Package | Reproducible artifact lifecycle and internal artifact smoke test |
 | Lifecycle | Installer, updater, and uninstaller transactions |
 
@@ -40,6 +40,18 @@ CI does not establish reference-device timing. The measured Samsung
 `SM-N920C` before/after result and its
 measurement-derived budget are recorded separately in
 [`performance-baseline.md`](performance-baseline.md).
+
+The portable public-beta matrix can be run directly:
+
+```bash
+bash scripts/beta-field-test.sh --self-test
+```
+
+It exercises ten isolated lifecycle, fallback, permission, environment, and
+geometry scenarios without changing the user's installation. CI proves the
+portable matrix only. The strict real-device and physical-orientation result
+is recorded separately in
+[`beta-field-report.md`](beta-field-report.md).
 
 ## Release artifact smoke verification
 
@@ -77,6 +89,8 @@ results separately from CI evidence.
   disabling it restores the exact managed boundary.
 - Confirm no daemon, refresh loop, background job, or persistent child process
   remains after render-once execution.
+- Run `bash scripts/beta-field-test.sh --record OUTPUT.md`, complete both
+  physical orientation prompts, and review the redacted report before sharing.
 
 Unobserved device states remain unverified. Do not substitute fixtures, CI,
 emulators, or guessed distribution details for real-device evidence.

@@ -3,7 +3,7 @@
 Termux Neo runs entirely as the current Termux user. It does not request root,
 open a network connection, install a daemon, or create a persistent child
 process. This document records the security boundary reviewed for the
-`0.5.0-beta` checkpoint.
+`0.9.0-beta` public-beta checkpoint.
 
 ## Trust model
 
@@ -105,6 +105,7 @@ manifest before installation. Detailed commands are in
 | `termux-neo` | `0` | `1` | `2` | shell default |
 | install/update/uninstall | `0` | `1` | `1` | `129`, `130`, `143` |
 | package and packaged smoke | `0` | `1` | `1` | `129`, `130`, `143` |
+| beta field tool | `0` | `1` | `2` | `129`, `130`, `143` |
 | quality runner | `0` | `1` | `2` | shell default |
 
 Optional probe failures become safe values and are not application failures.
@@ -129,3 +130,7 @@ bash scripts/quality-check.sh
 No critical or release-blocking defect is knowingly left open by this review.
 Unverified environments and the absence of publisher signatures remain
 explicit limitations rather than implied guarantees.
+
+The public-beta defect counts are maintained in
+[beta-issues.md](beta-issues.md). Security fixes remain explicitly allowed
+while the [Feature Freeze](feature-freeze.md) is active.

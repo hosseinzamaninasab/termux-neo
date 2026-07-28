@@ -15,6 +15,7 @@ fail() {
 }
 
 bash -n \
+    scripts/beta-field-test.sh \
     scripts/performance-check.sh \
     scripts/quality-check.sh \
     scripts/smoke-release.sh ||
@@ -24,9 +25,9 @@ bash scripts/quality-check.sh --list > "$list_file" 2> "$stderr_file" ||
     fail "quality test registry could not be listed"
 [[ ! -s "$stderr_file" ]] ||
     fail "quality test registry produced stderr"
-[[ "$(wc -l < "$list_file")" == "23" ]] ||
-    fail "quality registry does not contain 23 tests"
-[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "23" ]] ||
+[[ "$(wc -l < "$list_file")" == "24" ]] ||
+    fail "quality registry does not contain 24 tests"
+[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "24" ]] ||
     fail "quality registry contains duplicate tests"
 
 while IFS= read -r test_path; do
@@ -81,7 +82,14 @@ grep -Fq 'bash scripts/performance-check.sh --self-test' docs/quality.md ||
     fail "portable performance command is undocumented"
 grep -Fq 'CI does not establish reference-device timing' docs/quality.md ||
     fail "CI/performance evidence boundary is undocumented"
+grep -Fq 'bash scripts/beta-field-test.sh --self-test' docs/quality.md ||
+    fail "portable beta command is undocumented"
+grep -Fq 'portable matrix only.' docs/quality.md ||
+    fail "CI/beta evidence boundary is undocumented"
 
+grep -Fq '"$SOURCE_ROOT/scripts/beta-field-test.sh"' \
+    scripts/package-release.sh ||
+    fail "release builder does not require the beta field script"
 grep -Fq '"$SOURCE_ROOT/scripts/smoke-release.sh"' \
     scripts/package-release.sh ||
     fail "release builder does not require the smoke script"

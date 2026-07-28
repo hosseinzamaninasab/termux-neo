@@ -147,7 +147,8 @@ fi
 for required_path in \
     VERSION LICENSE README.md install.sh update.sh uninstall.sh \
     bin config docs src scripts/package-release.sh \
-    scripts/performance-check.sh scripts/smoke-release.sh
+    scripts/beta-field-test.sh scripts/performance-check.sh \
+    scripts/smoke-release.sh
 do
     [[ -e "$SOURCE_ROOT/$required_path" &&
        ! -L "$SOURCE_ROOT/$required_path" ]] ||
@@ -167,6 +168,7 @@ unexpected_link="$(
         "$SOURCE_ROOT/docs" \
         "$SOURCE_ROOT/src" \
         "$SOURCE_ROOT/scripts/package-release.sh" \
+        "$SOURCE_ROOT/scripts/beta-field-test.sh" \
         "$SOURCE_ROOT/scripts/performance-check.sh" \
         "$SOURCE_ROOT/scripts/smoke-release.sh" \
         -type l -print -quit
@@ -206,6 +208,7 @@ for shell_file in \
     "$SOURCE_ROOT/update.sh" \
     "$SOURCE_ROOT/uninstall.sh" \
     "$SOURCE_ROOT/scripts/package-release.sh" \
+    "$SOURCE_ROOT/scripts/beta-field-test.sh" \
     "$SOURCE_ROOT/scripts/performance-check.sh" \
     "$SOURCE_ROOT/scripts/smoke-release.sh" \
     "$SOURCE_ROOT"/src/*.sh \
@@ -241,6 +244,7 @@ cp -pR \
     "$package_root/"
 cp -p \
     "$SOURCE_ROOT/scripts/package-release.sh" \
+    "$SOURCE_ROOT/scripts/beta-field-test.sh" \
     "$SOURCE_ROOT/scripts/performance-check.sh" \
     "$SOURCE_ROOT/scripts/smoke-release.sh" \
     "$package_root/scripts/"
@@ -252,6 +256,7 @@ chmod 755 \
     "$package_root/update.sh" \
     "$package_root/uninstall.sh" \
     "$package_root/scripts/package-release.sh" \
+    "$package_root/scripts/beta-field-test.sh" \
     "$package_root/scripts/performance-check.sh" \
     "$package_root/scripts/smoke-release.sh" \
     "$package_root/bin/termux-neo" \
