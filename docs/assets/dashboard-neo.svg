@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 760 480"
+     role="img"
+     aria-labelledby="title desc"
+     data-render-version="0.9.0-beta"
+     data-render-width="56"
+     data-render-theme="neo"
+     data-render-fixture="documentation-v1"
+     data-render-sha256="69af0ee570715a8de24b93f508b3809e5c445d9616254d3094f4c0d79eb44fb2">
+  <title id="title">Termux Neo dashboard — neo theme</title>
+  <desc id="desc">Renderer-derived deterministic capture at 56 terminal columns. This fixture is not additional device evidence.</desc>
+  <rect width="760" height="480" rx="18" fill="#0b1020"/>
+  <rect x="14" y="14" width="732" height="452" rx="12" fill="#070b16" stroke="#1e293b" stroke-width="2"/>
+  <style>
+    text {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 16px;
+      dominant-baseline: alphabetic;
+    }
+    .border { fill: #22d3ee; }
+    .title, .prompt { fill: #e879f9; font-weight: 700; }
+    .label { fill: #67e8f9; font-weight: 700; }
+    .value { fill: #f8fafc; }
+    .status { fill: #22d3ee; }
+  </style>
+  <g xml:space="preserve">
+    <text x="30" y="50" class="border">      ╔══════════════════════════════════════════╗</text>
+    <text x="30" y="75"><tspan class="border">      ║</tspan><tspan class="value">                </tspan><tspan class="title">TERMUX NEO</tspan><tspan class="value">                </tspan><tspan class="border">║</tspan></text>
+    <text x="30" y="100" class="border">      ║──────────────────────────────────────────║</text>
+    <text x="30" y="125"><tspan class="border">      ║  </tspan><tspan class="label">USER</tspan><tspan class="value">      Zoro                          </tspan><tspan class="border">║</tspan></text>
+    <text x="30" y="150"><tspan class="border">      ║  </tspan><tspan class="label">DEVICE</tspan><tspan class="value">    samsung SM-N920C              </tspan><tspan class="border">║</tspan></text>
+    <text x="30" y="175"><tspan class="border">      ║  </tspan><tspan class="label">SYSTEM</tspan><tspan class="value">    Android 11                    </tspan><tspan class="border">║</tspan></text>
+    <text x="30" y="200"><tspan class="border">      ║  </tspan><tspan class="label">NETWORK</tspan><tspan class="value">   Wi-Fi                         </tspan><tspan class="border">║</tspan></text>
+    <text x="30" y="225"><tspan class="border">      ║  </tspan><tspan class="label">LOCAL IP</tspan><tspan class="value">  192.0.2.10                    </tspan><tspan class="border">║</tspan></text>
+    <text x="30" y="250" class="border">      ╚══════════════════════════════════════════╝</text>
+    <text x="30" y="275"></text>
+    <text x="30" y="300" class="status">      ════ ════ ════ ════ ════ ════ ════ ════ ════</text>
+    <text x="30" y="325" class="status">        NET:UP • VPN:OFF • BAT:82+ • TIME:21:35   </text>
+    <text x="30" y="350" class="status">      ════ ════ ════ ════ ════ ════ ════ ════ ════</text>
+    <text x="30" y="375"></text>
+    <text x="30" y="400" class="prompt">      ╭─ Zoro • ~/Projects/termux-neo</text>
+    <text x="30" y="425" class="prompt">      ╰─❯</text>
+  </g>
+</svg>

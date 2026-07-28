@@ -36,6 +36,7 @@ quality_group_for_test() {
             ;;
         tests/test_beta.sh|\
         tests/test_diagnostics.sh|\
+        tests/test_documentation.sh|\
         tests/test_integration.sh|\
         tests/test_performance.sh|\
         tests/test_quality_pipeline.sh|\
@@ -171,7 +172,7 @@ do
 done
 
 test_count="$(quality_list_tests | wc -l)"
-[[ "$test_count" =~ ^[0-9]+$ && "$test_count" == "24" ]] ||
-    quality_fail "expected 24 assigned tests, found $test_count"
+[[ "$test_count" =~ ^[0-9]+$ && "$test_count" == "25" ]] ||
+    quality_fail "expected 25 assigned tests, found $test_count"
 
 printf '\nPASS: automated quality pipeline (%s test files)\n' "$test_count"

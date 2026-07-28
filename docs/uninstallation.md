@@ -49,3 +49,8 @@ saved with mode `0600` at:
 ```text
 $HOME/.cache/termux-neo/uninstall-reports/uninstall-report.txt
 ```
+
+If the command refuses an unowned path or malformed startup markers, do not
+bypass the guard. Preserve the report and follow
+[Troubleshooting](troubleshooting.md). Installation ownership is described in
+[Installation](installation.md).

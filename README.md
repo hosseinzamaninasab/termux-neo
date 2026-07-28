@@ -1,96 +1,151 @@
 # Termux Neo
 
-Termux Neo is a modular, render-once CLI dashboard for Termux. It does not
-require root, replace the shell prompt, start a daemon, or run a refresh loop.
+Termux Neo is a modular, render-once terminal dashboard for Termux. One command
+collects bounded device state, renders Dashboard, Status, and Prompt views, and
+exits. It does not require root, replace `PS1`, start a daemon, open a network
+connection, or run a refresh loop.
 
-Current release checkpoint: `0.9.0-beta`. Feature Freeze is active.
+Current release checkpoint: `0.9.0-beta`. The
+[Feature Freeze](docs/feature-freeze.md) is active.
 
-## Install
+## Preview
+
+| `neo` | `matrix` |
+| --- | --- |
+| ![Termux Neo dashboard with the neo theme](docs/assets/dashboard-neo.svg) | ![Termux Neo dashboard with the matrix theme](docs/assets/dashboard-matrix.svg) |
+
+Both images are deterministic captures of the released renderer at 56 columns.
+They use documentation fixture values and are not additional device evidence.
+The exact evidence boundary is documented in
+[Compatibility](docs/compatibility.md).
+
+## Quick start
 
 From a complete source tree or a verified extracted release archive:
 
 ```bash
 bash install.sh
+termux-neo
 ```
 
-The production layout, rollback behavior, configuration-preservation contract,
-and supported paths are documented in [docs/installation.md](docs/installation.md).
-Published archives install without Git or branch state. Checksum verification,
-the internal file manifest, exact local-archive commands, and the reproducible
-packaging command are documented in
-[docs/release-artifacts.md](docs/release-artifacts.md).
-
-Verified and unverified environment boundaries, responsive widths, data-source
-fallback scenarios, and the interactive-shell scope are recorded in
-[docs/compatibility.md](docs/compatibility.md).
-
-The portable local/CI quality command, test groups, release-artifact smoke
-boundary, and device-only verification checklist are documented in
-[docs/quality.md](docs/quality.md).
-
-The reviewed trust model, parser and filesystem boundaries, diagnostic
-disclosure, release-integrity chain, and residual limitations are documented
-in [docs/security.md](docs/security.md).
-
-The render-once performance model, cycle-local probe caches, bounded IPC
-paths, portable stability gate, and measured reference-device startup baseline
-are documented in [docs/performance.md](docs/performance.md).
-
-The isolated public-beta matrix, redacted field-report contract, issue ledger,
-and active release-branch rules are documented in
-[docs/beta-testing.md](docs/beta-testing.md) and
-[docs/feature-freeze.md](docs/feature-freeze.md).
-
-After installation:
+Useful commands:
 
 ```bash
 termux-neo --help
+termux-neo --version
 termux-neo --diagnose
+termux-neo --config
+termux-neo --theme matrix
+termux-neo --no-color
 ```
 
-User settings are stored at:
+Only one option is accepted per invocation. `--theme` and `--no-color` are
+one-run overrides and do not rewrite saved settings.
+
+The installer writes only:
+
+```text
+$PREFIX/lib/termux-neo/
+$PREFIX/bin/termux-neo
+$HOME/.config/termux-neo/settings.conf
+```
+
+It preserves an existing settings file byte-for-byte. The installer never
+edits `.bashrc`; optional interactive-Bash startup integration is disabled by
+default and must be applied explicitly.
+
+Read [Installation](docs/installation.md) before installing from an archive.
+The checksum verifies integrity against the supplied digest but is not a
+publisher signature.
+
+## Configuration
+
+The active settings path is:
 
 ```text
 $HOME/.config/termux-neo/settings.conf
 ```
 
-Optional Bash startup integration remains disabled until it is explicitly
-enabled in that settings file and synchronized with `termux-neo --startup`.
+A schema-v1 file contains plain data, not shell code:
 
-## Update
-
-Run the updater from a complete source tree for the target version:
-
-```bash
-bash update.sh
+```ini
+schema_version=1
+display_user=Zoro
+theme=neo
+color_mode=auto
+startup_integration=false
 ```
 
-The updater does not require the installed runtime to be a Git checkout. It
-validates and stages the target runtime before replacement, preserves current
-schema settings byte-for-byte, migrates supported legacy settings through the
-configuration boundary, and restores runtime, launcher, and settings on
-failure. Downgrades are rejected unless `--force-downgrade` is explicit.
-
-The complete update contract and report location are documented in
-[docs/update.md](docs/update.md).
-
-## Uninstall
-
-Remove the owned runtime, stable launcher, and optional Bash startup block
-while preserving user settings:
+The only built-in themes are `neo` and `matrix`. To enable the optional Bash
+startup hook, set `startup_integration=true`, save the file, and then run:
 
 ```bash
-bash uninstall.sh
+termux-neo --startup
 ```
 
-Configuration removal is a separate, explicit action:
+See [Configuration](docs/configuration.md) and
+[Themes](docs/themes.md) for the complete validated contract.
+
+## Evidence and support boundary
+
+The physical reference record is one Samsung Galaxy Note5 (`SM-N920C`) running
+Android `11`, with terminal widths `56` and `94`. Widths `34`, `56`, and `94`
+also pass deterministic portable fixtures; that fixture coverage is not a
+claim about additional devices, Android releases, or Termux distribution
+channels. Only interactive Bash startup through `~/.bashrc` is verified.
+
+See [Compatibility](docs/compatibility.md) and
+[Known limitations](docs/known-limitations.md) before treating a portable
+test result as device support.
+
+Canonical checkpoint references:
+[docs/beta-testing.md](docs/beta-testing.md) and
+[docs/security.md](docs/security.md).
+
+## Documentation
+
+| Topic | Reference |
+| --- | --- |
+| Purpose and product boundaries | [Project overview](docs/project-overview.md) |
+| Supported and unverified environments | [Compatibility](docs/compatibility.md) |
+| Install | [Installation](docs/installation.md) |
+| Update and migration | [Update](docs/update.md) |
+| Safe removal | [Uninstallation](docs/uninstallation.md) |
+| Settings schema and examples | [Configuration](docs/configuration.md) |
+| Authoritative schema-v1 parser contract | [Settings Schema v1](docs/settings-schema-v1.md) |
+| Theme and color behavior | [Themes](docs/themes.md) |
+| Commands and exit statuses | [CLI](docs/cli.md) |
+| Diagnostic fields and privacy | [Diagnostics](docs/diagnostics.md) |
+| Common failures | [Troubleshooting](docs/troubleshooting.md) |
+| Runtime and lifecycle design | [Architecture](docs/architecture.md) |
+| Local tests and release checks | [Development](docs/development.md) |
+| Contribution workflow | [Contributing](docs/contributing.md) |
+| Private vulnerability reporting | [Security policy](docs/security-policy.md) |
+| Reviewed trust boundaries | [Security review](docs/security.md) |
+| Current constraints | [Known limitations](docs/known-limitations.md) |
+| Verified milestones | [Changelog](docs/changelog.md) |
+| Artifact creation and verification | [Release artifacts](docs/release-artifacts.md) |
+| Canonical quality pipeline | [Quality](docs/quality.md) |
+| Performance and stability | [Performance](docs/performance.md) |
+| Measured reference-device values | [Performance baseline](docs/performance-baseline.md) |
+| Public-beta field workflow | [Beta testing](docs/beta-testing.md) |
+| Recorded physical beta evidence | [Beta field report](docs/beta-field-report.md) |
+| Release-gating defect ledger | [Beta issue ledger](docs/beta-issues.md) |
+| Active release rules | [Feature Freeze](docs/feature-freeze.md) |
+
+## Development
+
+The canonical local and CI gate is:
 
 ```bash
-bash uninstall.sh --remove-config
+bash scripts/quality-check.sh
 ```
 
-The uninstaller validates ownership before changing any installed path, keeps
-rollback points until removal commits, and never restores an ambiguous
-historical shell backup over later user edits. The complete contract and
-report location are documented in
-[docs/uninstallation.md](docs/uninstallation.md).
+It runs syntax/static checks and all 25 assigned test files, including the
+documentation and extracted-artifact regressions. Portable CI does not replace
+physical device evidence.
+
+## License
+
+Termux Neo is open-source software released under the
+[MIT License](LICENSE).

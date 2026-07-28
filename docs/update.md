@@ -44,3 +44,8 @@ $HOME/.cache/termux-neo/update-reports/update-report.txt
 
 If rollback itself cannot complete, rollback storage is retained and its exact
 paths are printed in the report.
+
+Do not delete retained rollback storage until the installed state has been
+reviewed. See [Troubleshooting](troubleshooting.md) for downgrade, report, and
+recovery guidance; see [Configuration](configuration.md) for the schema
+contract.

@@ -25,9 +25,9 @@ bash scripts/quality-check.sh --list > "$list_file" 2> "$stderr_file" ||
     fail "quality test registry could not be listed"
 [[ ! -s "$stderr_file" ]] ||
     fail "quality test registry produced stderr"
-[[ "$(wc -l < "$list_file")" == "24" ]] ||
-    fail "quality registry does not contain 24 tests"
-[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "24" ]] ||
+[[ "$(wc -l < "$list_file")" == "25" ]] ||
+    fail "quality registry does not contain 25 tests"
+[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "25" ]] ||
     fail "quality registry contains duplicate tests"
 
 while IFS= read -r test_path; do
@@ -37,6 +37,9 @@ done < <(
     find tests -maxdepth 1 -type f -name 'test_*.sh' -print |
         LC_ALL=C sort
 )
+
+[[ "$(grep -Fc 'tests/test_documentation.sh' "$list_file")" == "1" ]] ||
+    fail "documentation regression is not registered exactly once"
 
 set +e
 bash scripts/quality-check.sh --unknown \

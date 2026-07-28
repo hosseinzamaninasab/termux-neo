@@ -27,6 +27,10 @@ If any replacement or smoke test fails, the previous runtime and launcher are
 restored. An existing settings file is never replaced. On first installation,
 the settings example is copied to the user settings path with mode `0600`.
 
+The canonical Termux relationship is required: `$PREFIX` must be the
+Termux-owned `usr` sibling of `$HOME`. Symlinked, unsafe, or unowned existing
+runtime/launcher targets are refused.
+
 Running the installer again is safe. It replaces only paths carrying the
 Termux Neo ownership markers, preserves user settings byte-for-byte, validates
 the installed `--version` and `--config` routes, and reports every lasting path
@@ -45,3 +49,7 @@ Updates are performed separately from a complete target source tree with
 Safe removal is performed from a complete source tree with
 `bash uninstall.sh`; see [uninstallation.md](uninstallation.md). User settings
 are preserved unless `--remove-config` is explicit.
+
+After installation, see [Configuration](configuration.md),
+[CLI](cli.md), and [Troubleshooting](troubleshooting.md). The complete
+installed/release trust boundary is in [Security Review](security.md).

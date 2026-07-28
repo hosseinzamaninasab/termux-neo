@@ -21,6 +21,38 @@ archive_name="termux-neo-0.9.0-beta.tar.gz"
 checksum_name="$archive_name.sha256"
 report_name="termux-neo-0.9.0-beta-release-report.txt"
 package_root="$extract_root/termux-neo-0.9.0-beta"
+public_documentation=(
+    README.md
+    LICENSE
+    docs/architecture.md
+    docs/beta-field-report.md
+    docs/beta-issues.md
+    docs/beta-testing.md
+    docs/changelog.md
+    docs/cli.md
+    docs/compatibility.md
+    docs/configuration.md
+    docs/contributing.md
+    docs/development.md
+    docs/diagnostics.md
+    docs/feature-freeze.md
+    docs/installation.md
+    docs/known-limitations.md
+    docs/performance-baseline.md
+    docs/performance.md
+    docs/project-overview.md
+    docs/quality.md
+    docs/release-artifacts.md
+    docs/security-policy.md
+    docs/security.md
+    docs/settings-schema-v1.md
+    docs/themes.md
+    docs/troubleshooting.md
+    docs/uninstallation.md
+    docs/update.md
+    docs/assets/dashboard-matrix.svg
+    docs/assets/dashboard-neo.svg
+)
 
 mkdir -p \
     "$source_fixture/scripts" \
@@ -128,6 +160,23 @@ tar --extract --gzip --same-permissions \
     sha256sum -c RELEASE_MANIFEST.sha256
 ) > "$fixture/manifest.stdout" ||
     fail "internal release manifest verification failed"
+
+for documentation_path in "${public_documentation[@]}"; do
+    [[ -f "$package_root/$documentation_path" &&
+       ! -L "$package_root/$documentation_path" &&
+       -s "$package_root/$documentation_path" ]] ||
+        fail "extracted public documentation is missing: $documentation_path"
+    [[ "$(stat -c '%a' "$package_root/$documentation_path")" == "644" ]] ||
+        fail "extracted public documentation mode is not 644: $documentation_path"
+done
+grep -Fqx 'MIT License' "$package_root/LICENSE" ||
+    fail "extracted artifact does not carry the MIT license"
+grep -Fq 'data-render-theme="neo"' \
+    "$package_root/docs/assets/dashboard-neo.svg" ||
+    fail "extracted neo renderer asset is invalid"
+grep -Fq 'data-render-theme="matrix"' \
+    "$package_root/docs/assets/dashboard-matrix.svg" ||
+    fail "extracted matrix renderer asset is invalid"
 
 PATH="$test_path" bash "$package_root/scripts/package-release.sh" "$output_c" \
     > "$fixture/package-c.stdout" 2> "$fixture/package-c.stderr" ||

@@ -3,6 +3,10 @@
 Termux Neo is a render-once command-line application. It never installs a
 shell prompt, starts a daemon, or creates a background refresh loop.
 
+```text
+Usage: termux-neo [OPTION]
+```
+
 ## Commands
 
 | Command | Behavior |
@@ -19,6 +23,9 @@ shell prompt, starts a daemon, or creates a background refresh loop.
 Only one option is accepted per invocation. Runtime theme and color overrides
 are validated by the existing configuration boundary and never rewrite the
 user's settings file.
+
+`--theme` requires exactly one value. The only accepted names are `neo` and
+`matrix`. Every other option accepts no additional argument.
 
 ## Output and exit status
 
@@ -76,3 +83,8 @@ The report uses stable `LABEL: value` lines and includes:
 
 Unavailable optional data is labeled `Unavailable` or `unavailable`. The
 report is generated only when the user explicitly runs `--diagnose`.
+
+The complete field dictionary and sharing warning are in
+[diagnostics.md](diagnostics.md). Settings and runtime overrides are documented
+in [configuration.md](configuration.md) and [themes.md](themes.md). For common
+errors, see [troubleshooting.md](troubleshooting.md).

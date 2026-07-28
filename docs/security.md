@@ -5,6 +5,9 @@ open a network connection, install a daemon, or create a persistent child
 process. This document records the security boundary reviewed for the
 `0.9.0-beta` public-beta checkpoint.
 
+Potential vulnerabilities should be reported privately according to
+[Security Policy](security-policy.md).
+
 ## Trust model
 
 The project protects against malformed settings, unsafe filesystem targets,
@@ -134,3 +137,7 @@ explicit limitations rather than implied guarantees.
 The public-beta defect counts are maintained in
 [beta-issues.md](beta-issues.md). Security fixes remain explicitly allowed
 while the [Feature Freeze](feature-freeze.md) is active.
+
+The software is distributed under the [MIT License](../LICENSE). That license
+includes its own warranty and liability disclaimer; it does not expand the
+technical guarantees recorded here.
