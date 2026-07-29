@@ -1,15 +1,16 @@
-# Public Beta Issue Ledger
+# Release-Gating Issue Ledger
 
-This is the release-gating defect ledger for the `0.9.0-beta` checkpoint.
+This is the release-gating defect ledger for the `1.0.0-rc.1` candidate.
 
 ## Open release gate
 
 ```text
 Open critical security defects: 0
+Open high-severity defects: 0
 Open release-blocking defects: 0
 ```
 
-No unresolved defect is recorded at either blocking severity.
+No unresolved critical, high-severity, or release-blocking defect is recorded.
 
 ## Entry contract
 

@@ -16,7 +16,7 @@ analysis when ShellCheck is available, and the complete test suite.
 | --- | --- |
 | Unit | CLI, configuration, layout, colors, content, renderers, and UI |
 | Fixtures | Compatibility, module fallbacks, and safe data modules |
-| Integration | Diagnostics, render-once flow, startup, pipeline, security/failure-safety, performance/stability, and public-beta contracts |
+| Integration | Diagnostics, render-once flow, startup, pipeline, security/failure-safety, performance/stability, and candidate contracts |
 | Package | Reproducible artifact lifecycle, release identity, clean-checkout layout, and internal artifact smoke test |
 | Lifecycle | Installer, updater, and uninstaller transactions |
 
@@ -41,7 +41,7 @@ CI does not establish reference-device timing. The measured Samsung
 measurement-derived budget are recorded separately in
 [`performance-baseline.md`](performance-baseline.md).
 
-The portable public-beta matrix can be run directly:
+The portable release-candidate matrix can be run directly:
 
 ```bash
 bash scripts/beta-field-test.sh --self-test
@@ -50,8 +50,9 @@ bash scripts/beta-field-test.sh --self-test
 It exercises ten isolated lifecycle, fallback, permission, environment, and
 geometry scenarios without changing the user's installation. CI proves the
 portable matrix only. The strict real-device and physical-orientation result
-is recorded separately in
-[`beta-field-report.md`](beta-field-report.md).
+must be written separately with `--record`; the committed
+[`beta-field-report.md`](beta-field-report.md) remains the historical Task 28
+beta record and is not silently rewritten as candidate evidence.
 
 ## Release artifact smoke verification
 

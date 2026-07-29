@@ -18,18 +18,18 @@ also accepted:
 bash scripts/package-release.sh "$HOME/storage/downloads/Telegram"
 ```
 
-For version `0.9.0-beta`, the command creates:
+For version `1.0.0-rc.1`, the command creates:
 
 ```text
-termux-neo-0.9.0-beta.tar.gz
-termux-neo-0.9.0-beta.tar.gz.sha256
-termux-neo-0.9.0-beta-release-notes.md
-termux-neo-0.9.0-beta-release-report.txt
+termux-neo-1.0.0-rc.1.tar.gz
+termux-neo-1.0.0-rc.1.tar.gz.sha256
+termux-neo-1.0.0-rc.1-release-notes.md
+termux-neo-1.0.0-rc.1-release-report.txt
 ```
 
 `VERSION` is the canonical release identity. The builder requires the CLI,
-archive/root name, prospective `v0.9.0-beta` tag, and
-`docs/releases/0.9.0-beta.md` metadata to agree before staging. See
+archive/root name, prospective `v1.0.0-rc.1` tag, and
+`docs/releases/1.0.0-rc.1.md` metadata to agree before staging. See
 [Versioning](versioning.md) for the complete fail-closed contract.
 
 The archive is reproducible: package layout, file order, timestamps, ownership
@@ -55,14 +55,14 @@ directory, then run:
 
 ```bash
 cd "$HOME/storage/downloads/Telegram"
-sha256sum -c termux-neo-0.9.0-beta.tar.gz.sha256
+sha256sum -c termux-neo-1.0.0-rc.1.tar.gz.sha256
 extract_parent="$(
     mktemp -d "$HOME/storage/downloads/Telegram/termux-neo-extract.XXXXXX"
 )"
 tar --extract --gzip --same-permissions \
-    --file termux-neo-0.9.0-beta.tar.gz \
+    --file termux-neo-1.0.0-rc.1.tar.gz \
     --directory "$extract_parent"
-cd "$extract_parent/termux-neo-0.9.0-beta"
+cd "$extract_parent/termux-neo-1.0.0-rc.1"
 sha256sum -c RELEASE_MANIFEST.sha256
 bash scripts/smoke-release.sh
 bash scripts/beta-field-test.sh --self-test

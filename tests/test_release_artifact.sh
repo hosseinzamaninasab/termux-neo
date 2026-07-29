@@ -17,11 +17,11 @@ test_prefix="$termux_files/usr"
 runtime_root="$test_prefix/lib/termux-neo"
 command_path="$test_prefix/bin/termux-neo"
 config_path="$test_home/.config/termux-neo/settings.conf"
-archive_name="termux-neo-0.9.0-beta.tar.gz"
+archive_name="termux-neo-1.0.0-rc.1.tar.gz"
 checksum_name="$archive_name.sha256"
-notes_name="termux-neo-0.9.0-beta-release-notes.md"
-report_name="termux-neo-0.9.0-beta-release-report.txt"
-package_root="$extract_root/termux-neo-0.9.0-beta"
+notes_name="termux-neo-1.0.0-rc.1-release-notes.md"
+report_name="termux-neo-1.0.0-rc.1-release-report.txt"
+package_root="$extract_root/termux-neo-1.0.0-rc.1"
 public_documentation=(
     README.md
     LICENSE
@@ -45,6 +45,7 @@ public_documentation=(
     docs/quality.md
     docs/release-artifacts.md
     docs/releases/0.9.0-beta.md
+    docs/releases/1.0.0-rc.1.md
     docs/security-policy.md
     docs/security.md
     docs/settings-schema-v1.md
@@ -147,14 +148,14 @@ cmp -s "$output_a/$checksum_name" "$output_b/$checksum_name" ||
     fail "two clean builds produced different checksum bytes"
 cmp -s "$output_a/$notes_name" "$output_b/$notes_name" ||
     fail "two clean builds produced different release-note bytes"
-cmp -s "docs/releases/0.9.0-beta.md" "$output_a/$notes_name" ||
+cmp -s "docs/releases/1.0.0-rc.1.md" "$output_a/$notes_name" ||
     fail "published release notes differ from the verified source"
 
 tar -tzf "$output_a/$archive_name" > "$fixture/archive-list"
-grep -Fqx 'termux-neo-0.9.0-beta/RELEASE_MANIFEST.sha256' \
+grep -Fqx 'termux-neo-1.0.0-rc.1/RELEASE_MANIFEST.sha256' \
     "$fixture/archive-list" ||
     fail "internal release manifest is missing from the archive"
-grep -Fqx 'termux-neo-0.9.0-beta/release/package-files.txt' \
+grep -Fqx 'termux-neo-1.0.0-rc.1/release/package-files.txt' \
     "$fixture/archive-list" ||
     fail "reviewed package layout is missing from the archive"
 if grep -Eq '(^/|(^|/)\.\.(/|$)|(^|/)\.git(/|$)|(^|/)\.github(/|$)|(^|/)tests(/|$)|scripts/quality-check\.sh$)' \
@@ -164,7 +165,7 @@ then
 fi
 
 grep -v '/$' "$fixture/archive-list" |
-    sed 's|^termux-neo-0.9.0-beta/||' |
+    sed 's|^termux-neo-1.0.0-rc.1/||' |
     LC_ALL=C sort > "$fixture/archive-files"
 {
     cat release/package-files.txt
@@ -261,7 +262,7 @@ if (( beta_status != 0 )); then
 fi
 [[ ! -s "$fixture/beta.stderr" ]] ||
     fail "extracted release beta field self-test produced stderr"
-grep -Fqx 'PASS: portable public beta field matrix (10 scenarios)' \
+grep -Fqx 'PASS: portable release candidate field matrix (10 scenarios)' \
     "$fixture/beta.stdout" ||
     fail "extracted release beta success line is missing"
 
@@ -324,7 +325,7 @@ HOME="$test_home" PREFIX="$test_prefix" PATH="$test_path" \
     fail "packaged clean install failed"
 [[ ! -s "$fixture/install.stderr" ]] ||
     fail "packaged clean install produced stderr"
-[[ "$("$command_path" --version)" == "termux-neo 0.9.0-beta" ]] ||
+[[ "$("$command_path" --version)" == "termux-neo 1.0.0-rc.1" ]] ||
     fail "packaged command version mismatch"
 [[ -f "$runtime_root/INSTALL_MANIFEST" ]] ||
     fail "packaged clean install has no ownership manifest"
@@ -350,7 +351,7 @@ HOME="$test_home" PREFIX="$test_prefix" PATH="$test_path" \
     fail "packaged update produced stderr"
 grep -Fqx 'version relation: upgrade' "$fixture/update.stdout" ||
     fail "packaged update relation mismatch"
-[[ "$("$command_path" --version)" == "termux-neo 0.9.0-beta" ]] ||
+[[ "$("$command_path" --version)" == "termux-neo 1.0.0-rc.1" ]] ||
     fail "packaged update version mismatch"
 cmp -s "$config_path" "$fixture/settings-before-update" ||
     fail "packaged update changed settings bytes"

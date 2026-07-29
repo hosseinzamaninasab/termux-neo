@@ -36,6 +36,7 @@ required_public_paths=(
     docs/quality.md
     docs/release-artifacts.md
     docs/releases/0.9.0-beta.md
+    docs/releases/1.0.0-rc.1.md
     docs/security-policy.md
     docs/security.md
     docs/settings-schema-v1.md
@@ -57,9 +58,9 @@ for public_path in "${required_public_paths[@]}"; do
         fail "public documentation mode is not 644: $public_path"
 done
 
-[[ "$(cat VERSION)" == "0.9.0-beta" ]] ||
-    fail "documentation does not target the frozen version"
-grep -Fq 'Current release checkpoint: `0.9.0-beta`' README.md ||
+[[ "$(cat VERSION)" == "1.0.0-rc.1" ]] ||
+    fail "documentation does not target the release candidate"
+grep -Fq 'Current release checkpoint: `1.0.0-rc.1`' README.md ||
     fail "README version checkpoint is missing"
 grep -Fq '[Feature Freeze](docs/feature-freeze.md)' README.md ||
     fail "README freeze statement is missing"
@@ -94,7 +95,7 @@ readme_targets=(
     docs/known-limitations.md
     docs/changelog.md
     docs/versioning.md
-    docs/releases/0.9.0-beta.md
+    docs/releases/1.0.0-rc.1.md
     docs/release-artifacts.md
     docs/quality.md
     docs/performance.md
@@ -224,21 +225,25 @@ grep -Fq 'no additional device was available' docs/compatibility.md ||
     fail "single-device evidence boundary is missing"
 grep -Fq 'not additional device evidence' README.md ||
     fail "README screenshot evidence boundary is missing"
-grep -Fq 'No runtime, CLI, settings, theme, lifecycle, support, or version behavior' \
+grep -Fq 'No runtime, CLI surface, settings, theme, lifecycle, or support behavior' \
     docs/changelog.md ||
-    fail "documentation-only changelog boundary is missing"
+    fail "release-candidate changelog boundary is missing"
 grep -Fq '`VERSION` file is the only committed' docs/versioning.md ||
     fail "version source ownership is undocumented"
-grep -Fqx 'Release version: `0.9.0-beta`' \
-    docs/releases/0.9.0-beta.md ||
+grep -Fqx 'Release version: `1.0.0-rc.1`' \
+    docs/releases/1.0.0-rc.1.md ||
     fail "release-note version metadata is missing"
-grep -Fqx 'Prospective tag: `v0.9.0-beta`' \
-    docs/releases/0.9.0-beta.md ||
+grep -Fqx 'Prospective tag: `v1.0.0-rc.1`' \
+    docs/releases/1.0.0-rc.1.md ||
     fail "release-note tag metadata is missing"
+grep -Fqx \
+    'Publication status: release candidate; GitHub prerelease only.' \
+    docs/releases/1.0.0-rc.1.md ||
+    fail "release-note publication boundary is missing"
 grep -Fqx \
     'Publication status: checkpoint only; no Git tag or public release.' \
     docs/releases/0.9.0-beta.md ||
-    fail "release-note publication boundary is missing"
+    fail "historical beta publication boundary changed"
 
 render_output="$(
     bash -s -- "$PROJECT_ROOT" "$fixture" <<'RENDER'

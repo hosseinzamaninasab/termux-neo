@@ -1,6 +1,6 @@
 # Known Limitations
 
-This document describes the frozen `0.9.0-beta` boundary. A limitation is not
+This document describes the frozen `1.0.0-rc.1` boundary. A limitation is not
 an implied future commitment.
 
 ## Environment evidence
@@ -44,7 +44,7 @@ an implied future commitment.
   orientation, distribution provenance, or device performance.
 - Recorded startup measurements are specific to the reference device and
   measured software checkpoint; they are not a universal performance target.
-- No additional real device was available at the public-beta checkpoint.
+- No additional real device was available at the release-candidate checkpoint.
 
 ## Freeze
 

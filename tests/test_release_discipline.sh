@@ -12,11 +12,11 @@ output_a="$fixture/output-a"
 output_b="$fixture/output-b"
 extract_root="$fixture/extract"
 fake_bin="$fixture/fake-bin"
-archive_name="termux-neo-0.9.0-beta.tar.gz"
+archive_name="termux-neo-1.0.0-rc.1.tar.gz"
 checksum_name="$archive_name.sha256"
-notes_name="termux-neo-0.9.0-beta-release-notes.md"
-report_name="termux-neo-0.9.0-beta-release-report.txt"
-package_root="$extract_root/termux-neo-0.9.0-beta"
+notes_name="termux-neo-1.0.0-rc.1-release-notes.md"
+report_name="termux-neo-1.0.0-rc.1-release-report.txt"
+package_root="$extract_root/termux-neo-1.0.0-rc.1"
 
 mkdir -p "$fixture" "$candidate" "$fake_bin"
 trap 'rm -rf "$fixture"' EXIT
@@ -35,16 +35,24 @@ done
 
 cd "$PROJECT_ROOT"
 
-[[ "$(cat VERSION)" == "0.9.0-beta" ]] ||
-    fail "release discipline changed the frozen VERSION"
-grep -Fqx 'ACTIVE — 0.9.0-beta' docs/feature-freeze.md ||
-    fail "release discipline changed the active Feature Freeze"
+[[ "$(cat VERSION)" == "1.0.0-rc.1" ]] ||
+    fail "release discipline does not target the candidate VERSION"
+grep -Fqx 'ACTIVE — 1.0.0-rc.1' docs/feature-freeze.md ||
+    fail "release discipline changed the active candidate freeze"
 [[ -z "$(git tag --list v0.9.0-beta)" ]] ||
-    fail "the prospective beta tag already exists"
-[[ -z "$(git tag --list v1.0.0-rc.1)" ]] ||
-    fail "the deferred release-candidate tag already exists"
+    fail "the historical beta tag must remain absent"
+if git show-ref --verify --quiet refs/tags/v1.0.0-rc.1; then
+    [[ "$(git cat-file -t v1.0.0-rc.1)" == "tag" ]] ||
+        fail "release-candidate tag is not annotated"
+    [[ "$(git rev-parse v1.0.0-rc.1^{})" == "$(git rev-parse HEAD)" ]] ||
+        fail "release-candidate tag does not target the tested commit"
+    [[ "$(git for-each-ref \
+        --format='%(contents:subject)' refs/tags/v1.0.0-rc.1)" == \
+       "Termux Neo v1.0.0-rc.1" ]] ||
+        fail "release-candidate tag annotation is inconsistent"
+fi
 
-# Capture the exact candidate worktree, including new Task 30 paths, into one
+# Capture the exact candidate worktree, including Task 31 identity, into one
 # temporary commit. Two clones of that commit are then genuine clean checkouts.
 candidate_paths="$fixture/candidate-paths.bin"
 {
@@ -117,9 +125,9 @@ for output_dir in "$output_a" "$output_b"; do
         sha256sum -c "$checksum_name"
     ) > "$fixture/checksum.stdout" ||
         fail "clean-checkout external checksum verification failed"
-    grep -Fqx 'version: 0.9.0-beta' "$output_dir/$report_name" ||
+    grep -Fqx 'version: 1.0.0-rc.1' "$output_dir/$report_name" ||
         fail "release report version is inconsistent"
-    grep -Fqx 'prospective tag: v0.9.0-beta' \
+    grep -Fqx 'prospective tag: v1.0.0-rc.1' \
         "$output_dir/$report_name" ||
         fail "release report prospective tag is inconsistent"
 done
@@ -130,13 +138,13 @@ cmp -s "$output_a/$checksum_name" "$output_b/$checksum_name" ||
     fail "two clean checkouts produced different checksum bytes"
 cmp -s "$output_a/$notes_name" "$output_b/$notes_name" ||
     fail "two clean checkouts produced different release-note bytes"
-cmp -s "$checkout_a/docs/releases/0.9.0-beta.md" \
+cmp -s "$checkout_a/docs/releases/1.0.0-rc.1.md" \
     "$output_a/$notes_name" ||
     fail "generated release notes differ from their verified source"
 
 tar -tzf "$output_a/$archive_name" > "$fixture/archive.list"
 grep -v '/$' "$fixture/archive.list" |
-    sed 's|^termux-neo-0.9.0-beta/||' |
+    sed 's|^termux-neo-1.0.0-rc.1/||' |
     LC_ALL=C sort > "$fixture/archive-files.list"
 {
     cat "$checkout_a/release/package-files.txt"
@@ -198,7 +206,7 @@ done <<'INVALID_VERSIONS'
 1.0.0+build.1
 INVALID_VERSIONS
 
-printf '%s\n%s\n' '0.9.0-beta' 'unexpected' \
+printf '%s\n%s\n' '1.0.0-rc.1' 'unexpected' \
     > "$invalid_semver/VERSION"
 set +e
 PATH="$test_path" \
@@ -220,7 +228,7 @@ grep -Fq 'VERSION must contain exactly one line' \
 notes_mismatch="$fixture/notes-mismatch"
 git clone -q --no-hardlinks "$candidate" "$notes_mismatch"
 printf '\nProspective tag: `v9.9.9`\n' \
-    >> "$notes_mismatch/docs/releases/0.9.0-beta.md"
+    >> "$notes_mismatch/docs/releases/1.0.0-rc.1.md"
 set +e
 PATH="$test_path" \
     bash "$notes_mismatch/scripts/package-release.sh" \

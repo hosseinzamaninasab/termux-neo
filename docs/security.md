@@ -3,7 +3,7 @@
 Termux Neo runs entirely as the current Termux user. It does not request root,
 open a network connection, install a daemon, or create a persistent child
 process. This document records the security boundary reviewed for the
-`0.9.0-beta` public-beta checkpoint.
+`1.0.0-rc.1` release-candidate checkpoint.
 
 Potential vulnerabilities should be reported privately according to
 [Security Policy](security-policy.md).

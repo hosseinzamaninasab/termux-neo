@@ -23,21 +23,21 @@ the updater, package name, tag, and release notes.
 The current value is:
 
 ```text
-0.9.0-beta
+1.0.0-rc.1
 ```
 
 ## Derived identities
 
 Every other release identity is derived from `VERSION`:
 
-| Consumer | Required value for `0.9.0-beta` |
+| Consumer | Required value for `1.0.0-rc.1` |
 | --- | --- |
-| CLI | `termux-neo 0.9.0-beta` |
-| Package root | `termux-neo-0.9.0-beta/` |
-| Archive | `termux-neo-0.9.0-beta.tar.gz` |
-| Prospective Git tag | `v0.9.0-beta` |
-| Verified notes source | `docs/releases/0.9.0-beta.md` |
-| Published notes filename | `termux-neo-0.9.0-beta-release-notes.md` |
+| CLI | `termux-neo 1.0.0-rc.1` |
+| Package root | `termux-neo-1.0.0-rc.1/` |
+| Archive | `termux-neo-1.0.0-rc.1.tar.gz` |
+| Prospective Git tag | `v1.0.0-rc.1` |
+| Verified notes source | `docs/releases/1.0.0-rc.1.md` |
+| Published notes filename | `termux-neo-1.0.0-rc.1-release-notes.md` |
 
 The `v` prefix belongs only to a prospective Git tag. It is never written into
 `VERSION`.
@@ -72,6 +72,10 @@ complete release-discipline test together. Editing only one consumer fails.
 
 ## Publication boundary
 
-Packaging does not create a Git tag, GitHub release, or remote upload. At this
-checkpoint `v0.9.0-beta` is only the derived prospective tag. Creation and
-publication of `v1.0.0-rc.1` remain a separate release-candidate task.
+Packaging does not create a Git tag, GitHub release, or remote upload. The
+Task 31 release transaction may create the annotated `v1.0.0-rc.1` tag only
+after the complete quality, artifact, defect, and reference-device gates pass.
+The candidate commit and tag must be pushed together, and the GitHub release
+must remain a prerelease whose three public assets match the locally verified
+archive, release notes, and checksum byte-for-byte. Stable `v1.0.0` remains a
+separate release task.

@@ -291,7 +291,7 @@ release_notes_require_field \
     "Archive:" "Archive: \`$archive_name\`"
 release_notes_require_field \
     "Publication status:" \
-    "Publication status: checkpoint only; no Git tag or public release."
+    "Publication status: release candidate; GitHub prerelease only."
 
 cli_version_output="$(
     bash "$SOURCE_ROOT/src/main.sh" --version 2>/dev/null

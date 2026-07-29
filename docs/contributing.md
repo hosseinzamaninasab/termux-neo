@@ -1,7 +1,7 @@
 # Contributing
 
 Contributions are welcome under the project's
-[MIT License](../LICENSE). The current `0.9.0-beta` branch is under
+[MIT License](../LICENSE). The current `1.0.0-rc.1` candidate is under
 [Feature Freeze](feature-freeze.md), so contribution scope is intentionally
 narrow.
 

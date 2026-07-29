@@ -86,8 +86,8 @@ chmod 640 "$config_path"
 cp -p "$config_path" "$fixture/settings-before-upgrade"
 
 # A newer standalone source tree upgrades the owned runtime and launcher.
-target_upgrade="$fixture/target-0.9.1-beta"
-make_target "$target_upgrade" "0.9.1-beta"
+target_upgrade="$fixture/target-1.0.0-rc.2"
+make_target "$target_upgrade" "1.0.0-rc.2"
 run_updater "$target_upgrade" 0 "$PATH"
 
 [[ ! -s "$stderr_file" ]] || fail "successful update produced stderr"
@@ -104,9 +104,9 @@ grep -Fqx "preserved: $config_path" "$stdout_file" ||
 grep -Fqx 'startup integration: unchanged' "$stdout_file" ||
     fail "startup no-change result was not reported"
 
-[[ "$($command_path --version)" == "termux-neo 0.9.1-beta" ]] ||
+[[ "$($command_path --version)" == "termux-neo 1.0.0-rc.2" ]] ||
     fail "updated command version mismatch"
-grep -Fqx 'version=0.9.1-beta' "$runtime_root/INSTALL_MANIFEST" ||
+grep -Fqx 'version=1.0.0-rc.2' "$runtime_root/INSTALL_MANIFEST" ||
     fail "updated ownership manifest version mismatch"
 [[ -f "$runtime_root/docs/update.md" ]] ||
     fail "update documentation was not installed"
@@ -163,10 +163,10 @@ cmp -s "$test_home/.bashrc" "$fixture/bashrc-before-update" ||
     fail "configuration migration changed the Bash startup file"
 
 # Advance once more so an older source can exercise downgrade refusal.
-target_newer="$fixture/target-0.9.2-beta"
-make_target "$target_newer" "0.9.2-beta"
+target_newer="$fixture/target-1.0.0-rc.3"
+make_target "$target_newer" "1.0.0-rc.3"
 run_updater "$target_newer" 0 "$PATH"
-[[ "$($command_path --version)" == "termux-neo 0.9.2-beta" ]] ||
+[[ "$($command_path --version)" == "termux-neo 1.0.0-rc.3" ]] ||
     fail "second upgrade version mismatch"
 
 printf 'downgrade-refusal-sentinel\n' \
@@ -189,14 +189,14 @@ cmp -s "$config_path" "$fixture/settings-before-refused-downgrade" ||
 run_updater "$target_upgrade" 0 "$PATH" --force-downgrade
 grep -Fqx 'version relation: forced downgrade' "$stdout_file" ||
     fail "forced downgrade relation was not reported"
-[[ "$($command_path --version)" == "termux-neo 0.9.1-beta" ]] ||
+[[ "$($command_path --version)" == "termux-neo 1.0.0-rc.2" ]] ||
     fail "forced downgrade version mismatch"
 [[ ! -e "$runtime_root/DOWNGRADE_REFUSAL_SENTINEL" ]] ||
     fail "forced downgrade did not replace the runtime"
 
 # Invalid target shell bytes fail before any installed target is replaced.
 target_invalid="$fixture/target-invalid"
-make_target "$target_invalid" "0.9.3-beta"
+make_target "$target_invalid" "1.0.0-rc.4"
 printf 'if invalid target syntax\n' >> "$target_invalid/src/main.sh"
 printf 'preflight-sentinel\n' > "$runtime_root/PREFLIGHT_SENTINEL"
 cp -p "$command_path" "$fixture/command-before-invalid-target"
@@ -213,8 +213,8 @@ cmp -s "$config_path" "$fixture/settings-before-invalid-target" ||
     fail "invalid target executable changed settings"
 
 # A forced mid-swap failure restores the exact previous installation.
-target_failure="$fixture/target-0.9.3-beta"
-make_target "$target_failure" "0.9.3-beta"
+target_failure="$fixture/target-1.0.0-rc.4"
+make_target "$target_failure" "1.0.0-rc.4"
 printf 'rollback-sentinel\n' > "$runtime_root/ROLLBACK_SENTINEL"
 cp "$runtime_root/ROLLBACK_SENTINEL" \
     "$fixture/runtime-sentinel-before-failure"
@@ -256,8 +256,8 @@ cmp -s "$test_home/.bashrc" "$fixture/bashrc-before-update" ||
     fail "failed update changed the Bash startup file"
 
 # A post-swap smoke failure also restores a migrated legacy configuration.
-target_smoke_failure="$fixture/target-0.9.4-beta"
-make_target "$target_smoke_failure" "0.9.4-beta"
+target_smoke_failure="$fixture/target-1.0.0-rc.5"
+make_target "$target_smoke_failure" "1.0.0-rc.5"
 printf '\nif [[ "$PROJECT_ROOT" == %q ]]; then\n    exit 88\nfi\n' \
     "$runtime_root" >> "$target_smoke_failure/src/main.sh"
 printf 'config-rollback-sentinel\n' \

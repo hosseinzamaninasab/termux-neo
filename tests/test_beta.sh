@@ -42,7 +42,7 @@ PATH="$probe_bin:$PATH" TMPDIR="$fixture" \
     fail "portable beta field matrix used a real external probe"
 (( ${#legacy_release_shebang} + 1 <= 128 )) ||
     fail "portable beta path exceeds the legacy Android shebang limit"
-grep -Fqx 'PASS: portable public beta field matrix (10 scenarios)' \
+grep -Fqx 'PASS: portable release candidate field matrix (10 scenarios)' \
     "$stdout_file" ||
     fail "portable beta success contract is missing"
 
@@ -72,14 +72,14 @@ grep -Fq 'usage: bash scripts/beta-field-test.sh' \
     "$fixture/invalid.stderr" ||
     fail "invalid beta usage message is missing"
 
-[[ "$(cat VERSION)" == "0.9.0-beta" ]] ||
-    fail "public beta checkpoint version is inconsistent"
-grep -Fq 'Current release checkpoint: `0.9.0-beta`' README.md ||
-    fail "README public beta checkpoint is missing"
+[[ "$(cat VERSION)" == "1.0.0-rc.1" ]] ||
+    fail "release candidate version is inconsistent"
+grep -Fq 'Current release checkpoint: `1.0.0-rc.1`' README.md ||
+    fail "README release candidate checkpoint is missing"
 grep -Fq '[docs/beta-testing.md](docs/beta-testing.md)' README.md ||
     fail "README beta testing link is missing"
 
-grep -Fqx 'ACTIVE — 0.9.0-beta' docs/feature-freeze.md ||
+grep -Fqx 'ACTIVE — 1.0.0-rc.1' docs/feature-freeze.md ||
     fail "feature freeze is not active"
 for allowed_change in \
     'a fix for a release-blocking defect' \
@@ -93,6 +93,8 @@ done
 
 grep -Fqx 'Open critical security defects: 0' docs/beta-issues.md ||
     fail "critical defect gate is not zero"
+grep -Fqx 'Open high-severity defects: 0' docs/beta-issues.md ||
+    fail "high-severity defect gate is not zero"
 grep -Fqx 'Open release-blocking defects: 0' docs/beta-issues.md ||
     fail "release-blocking defect gate is not zero"
 grep -Fqx -- '- Feature freeze: ACTIVE' docs/beta-field-report.md ||
@@ -128,4 +130,4 @@ grep -Fq 'did not mutate the user installation' \
         docs/beta-field-report.md ||
     fail "field report isolation boundary is missing"
 
-printf 'PASS: public beta field matrix and feature freeze\n'
+printf 'PASS: release candidate field matrix and feature freeze\n'

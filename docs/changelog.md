@@ -1,9 +1,9 @@
 # Changelog
 
-This changelog records verified project checkpoints. It does not announce a
-GitHub release or tag; public release publication is a later release task.
+This changelog records verified project checkpoints. Stable `v1.0.0` remains
+unreleased.
 
-## Unreleased — release-discipline checkpoint
+## 1.0.0-rc.1 — 2026-07-29
 
 - Published the complete public documentation set for the frozen
   `0.9.0-beta` product.
@@ -18,9 +18,11 @@ GitHub release or tag; public release publication is a later release task.
   covering both published files, and two-clean-checkout reproducibility gates.
 - Expanded the canonical quality gate from 25 to 26 test files with a focused
   release-discipline regression.
-- Did not create a Git tag, GitHub release, or `v1.0.0-rc.1` candidate.
-- No runtime, CLI, settings, theme, lifecycle, support, or version behavior
-  changed.
+- Promoted the synchronized release identity to `1.0.0-rc.1` only after the
+  full package, lifecycle, defect, compatibility, and reference-device gates.
+- Reserved `v1.0.0` for the stable-release task.
+- No runtime, CLI surface, settings, theme, lifecycle, or support behavior
+  changed; only the synchronized release identity moved to the candidate.
 
 ## 0.9.0-beta — 2026-07-28
 

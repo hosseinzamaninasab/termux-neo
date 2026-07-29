@@ -5,7 +5,7 @@ collects bounded device state, renders Dashboard, Status, and Prompt views, and
 exits. It does not require root, replace `PS1`, start a daemon, open a network
 connection, or run a refresh loop.
 
-Current release checkpoint: `0.9.0-beta`. The
+Current release checkpoint: `1.0.0-rc.1`. The
 [Feature Freeze](docs/feature-freeze.md) is active.
 
 ## Preview
@@ -125,14 +125,14 @@ Canonical checkpoint references:
 | Current constraints | [Known limitations](docs/known-limitations.md) |
 | Verified milestones | [Changelog](docs/changelog.md) |
 | Semantic Versioning and release identity | [Versioning](docs/versioning.md) |
-| Current verified release notes | [0.9.0-beta release notes](docs/releases/0.9.0-beta.md) |
+| Current verified release notes | [1.0.0-rc.1 release notes](docs/releases/1.0.0-rc.1.md) |
 | Artifact creation and verification | [Release artifacts](docs/release-artifacts.md) |
 | Canonical quality pipeline | [Quality](docs/quality.md) |
 | Performance and stability | [Performance](docs/performance.md) |
 | Measured reference-device values | [Performance baseline](docs/performance-baseline.md) |
-| Public-beta field workflow | [Beta testing](docs/beta-testing.md) |
+| Release-candidate field workflow | [Candidate testing](docs/beta-testing.md) |
 | Recorded physical beta evidence | [Beta field report](docs/beta-field-report.md) |
-| Release-gating defect ledger | [Beta issue ledger](docs/beta-issues.md) |
+| Release-gating defect ledger | [Issue ledger](docs/beta-issues.md) |
 | Active release rules | [Feature Freeze](docs/feature-freeze.md) |
 
 ## Development

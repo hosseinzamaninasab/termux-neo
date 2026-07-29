@@ -3,10 +3,10 @@
 Status:
 
 ```text
-ACTIVE — 0.9.0-beta
+ACTIVE — 1.0.0-rc.1
 ```
 
-The stable-release branch is frozen at the Task 28 public-beta checkpoint.
+The stable-release branch is frozen at the Task 31 release-candidate checkpoint.
 Product scope, CLI surface, configuration schema, themes, render geometry, and
 lifecycle ownership may not expand before `v1.0.0`.
 

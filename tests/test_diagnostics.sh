@@ -81,7 +81,7 @@ mapfile -t lines < "$stdout_file"
 
 grep -Fqx 'TERMUX NEO DIAGNOSTICS' "$stdout_file" ||
     fail "diagnostics heading mismatch"
-grep -Fqx 'VERSION: 0.9.0-beta' "$stdout_file" ||
+grep -Fqx 'VERSION: 1.0.0-rc.1' "$stdout_file" ||
     fail "diagnostics version mismatch"
 grep -Fqx "INSTALLATION_PATH: $PROJECT_ROOT" "$stdout_file" ||
     fail "diagnostics installation path mismatch"

@@ -4,7 +4,8 @@
 
 | Version | Security fixes |
 | --- | --- |
-| `0.9.0-beta` | Supported during the active Feature Freeze |
+| `1.0.0-rc.1` | Supported during the active Feature Freeze |
+| `0.9.0-beta` | Superseded by the release candidate |
 | Earlier development checkpoints | Not supported |
 
 Security fixes remain allowed during Feature Freeze and must pass focused

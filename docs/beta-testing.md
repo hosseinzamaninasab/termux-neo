@@ -1,7 +1,7 @@
-# Public Beta Testing
+# Release Candidate Testing
 
-Termux Neo `0.9.0-beta` is feature-frozen. Beta work now validates the existing
-product and release lifecycle; it does not expand product scope.
+Termux Neo `1.0.0-rc.1` is feature-frozen. Candidate work validates the
+existing product and release lifecycle; it does not expand product scope.
 
 ## Safe field command
 
@@ -28,7 +28,8 @@ It does not change the user's installed runtime, settings, or `.bashrc`.
 On a real Termux device, use an output path outside the release tree:
 
 ```bash
-bash scripts/beta-field-test.sh --record "$PWD/beta-field-report.md"
+bash scripts/beta-field-test.sh --record \
+    "$HOME/storage/downloads/Telegram/task31-device-report.md"
 ```
 
 Record mode builds and verifies the candidate artifact, runs its smoke and
@@ -37,9 +38,11 @@ It pauses twice: rotate the device to portrait and then landscape, waiting for
 Termux to resize before pressing Enter each time.
 
 The generated Markdown contains only device model, Android and Bash versions,
-terminal widths, aggregate PASS/FAIL results, and defect counts. It excludes
-HOME, PREFIX, usernames, local IP addresses, settings values, and raw rendered
-device data. Review the file before sharing it.
+terminal widths, aggregate PASS/FAIL results, and defect counts. For this
+candidate it is release evidence only when the reference device is `samsung`
+`SM-N920C` on Android `11`. It excludes HOME, PREFIX, usernames, local IP
+addresses, settings values, and raw rendered device data. Review the file
+before sharing it.
 
 One report supports only its recorded environment. Additional devices can be
 added only through separately retained reports; their absence must not be
@@ -47,7 +50,7 @@ rewritten as a broad Android or Termux compatibility claim.
 
 ## Feedback
 
-Before filing a beta issue:
+Before filing a candidate issue:
 
 1. Verify the artifact's external checksum and internal manifest.
 2. Record `termux-neo --version`.

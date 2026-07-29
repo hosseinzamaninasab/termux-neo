@@ -260,7 +260,7 @@ assert_render_case 94 "$HOME/Projects/demo" "~/Projects/demo" 25
 # Bash is the verified CLI and interactive-startup shell boundary.
 cd "$original_pwd"
 [[ -n "${BASH_VERSION-}" ]] || fail "compatibility test is not running in Bash"
-[[ "$(bash src/main.sh --version)" == "termux-neo 0.9.0-beta" ]] ||
+[[ "$(bash src/main.sh --version)" == "termux-neo 1.0.0-rc.1" ]] ||
     fail "Bash CLI invocation failed"
 grep -Fq 'Only `~/.bashrc` integration is supported' docs/compatibility.md ||
     fail "Bash-only startup support is undocumented"
