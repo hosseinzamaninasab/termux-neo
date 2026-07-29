@@ -44,7 +44,8 @@ quality_group_for_test() {
         tests/test_startup_integration.sh)
             printf 'integration'
             ;;
-        tests/test_release_artifact.sh)
+        tests/test_release_artifact.sh|\
+        tests/test_release_discipline.sh)
             printf 'package'
             ;;
         tests/test_install.sh|\
@@ -172,7 +173,7 @@ do
 done
 
 test_count="$(quality_list_tests | wc -l)"
-[[ "$test_count" =~ ^[0-9]+$ && "$test_count" == "25" ]] ||
-    quality_fail "expected 25 assigned tests, found $test_count"
+[[ "$test_count" =~ ^[0-9]+$ && "$test_count" == "26" ]] ||
+    quality_fail "expected 26 assigned tests, found $test_count"
 
 printf '\nPASS: automated quality pipeline (%s test files)\n' "$test_count"

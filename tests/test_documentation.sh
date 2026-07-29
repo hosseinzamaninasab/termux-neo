@@ -35,6 +35,7 @@ required_public_paths=(
     docs/project-overview.md
     docs/quality.md
     docs/release-artifacts.md
+    docs/releases/0.9.0-beta.md
     docs/security-policy.md
     docs/security.md
     docs/settings-schema-v1.md
@@ -42,6 +43,7 @@ required_public_paths=(
     docs/troubleshooting.md
     docs/uninstallation.md
     docs/update.md
+    docs/versioning.md
     docs/assets/dashboard-matrix.svg
     docs/assets/dashboard-neo.svg
 )
@@ -91,6 +93,8 @@ readme_targets=(
     docs/security.md
     docs/known-limitations.md
     docs/changelog.md
+    docs/versioning.md
+    docs/releases/0.9.0-beta.md
     docs/release-artifacts.md
     docs/quality.md
     docs/performance.md
@@ -223,6 +227,18 @@ grep -Fq 'not additional device evidence' README.md ||
 grep -Fq 'No runtime, CLI, settings, theme, lifecycle, support, or version behavior' \
     docs/changelog.md ||
     fail "documentation-only changelog boundary is missing"
+grep -Fq '`VERSION` file is the only committed' docs/versioning.md ||
+    fail "version source ownership is undocumented"
+grep -Fqx 'Release version: `0.9.0-beta`' \
+    docs/releases/0.9.0-beta.md ||
+    fail "release-note version metadata is missing"
+grep -Fqx 'Prospective tag: `v0.9.0-beta`' \
+    docs/releases/0.9.0-beta.md ||
+    fail "release-note tag metadata is missing"
+grep -Fqx \
+    'Publication status: checkpoint only; no Git tag or public release.' \
+    docs/releases/0.9.0-beta.md ||
+    fail "release-note publication boundary is missing"
 
 render_output="$(
     bash -s -- "$PROJECT_ROOT" "$fixture" <<'RENDER'

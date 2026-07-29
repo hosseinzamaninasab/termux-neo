@@ -299,6 +299,7 @@ done
 version="$(< VERSION)"
 archive_name="termux-neo-$version.tar.gz"
 checksum_name="$archive_name.sha256"
+notes_name="termux-neo-$version-release-notes.md"
 report_name="termux-neo-$version-release-report.txt"
 symlink_output="$fixture/release-symlink-output"
 report_target="$fixture/report-target"
@@ -317,10 +318,11 @@ set -e
 cmp -s "$report_target" "$fixture/report-target-before" ||
     fail "release builder wrote through a report symlink"
 [[ ! -e "$symlink_output/$archive_name" &&
-   ! -e "$symlink_output/$checksum_name" ]] ||
+   ! -e "$symlink_output/$checksum_name" &&
+   ! -e "$symlink_output/$notes_name" ]] ||
     fail "report-symlink failure published release files"
 
-# A failure between archive and checksum publication removes the first file.
+# A failure after archive/notes publication removes every public release file.
 partial_output="$fixture/release-partial-output"
 fake_bin="$fixture/release-fake-bin"
 mkdir -p -- "$partial_output" "$fake_bin"
@@ -342,8 +344,9 @@ set -e
 [[ "$release_partial_status" == "91" ]] ||
     fail "partial release fixture returned $release_partial_status"
 [[ ! -e "$partial_output/$archive_name" &&
-   ! -e "$partial_output/$checksum_name" ]] ||
-    fail "partial release publication left an archive or checksum"
+   ! -e "$partial_output/$checksum_name" &&
+   ! -e "$partial_output/$notes_name" ]] ||
+    fail "partial release publication left a release file"
 
 # A real published checksum rejects changed archive bytes before extraction.
 verified_output="$fixture/release-verified-output"

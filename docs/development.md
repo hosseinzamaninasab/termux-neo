@@ -21,7 +21,7 @@ List all assigned tests:
 bash scripts/quality-check.sh --list
 ```
 
-Run syntax, whitespace/static checks, and all 25 tests:
+Run syntax, whitespace/static checks, and all 26 tests:
 
 ```bash
 bash scripts/quality-check.sh
@@ -48,8 +48,15 @@ bash scripts/package-release.sh
 ```
 
 The default artifact directory is `dist/`. The builder normalizes archive
-metadata, generates the internal manifest, extracts the result, and runs the
-packaged smoke test before publishing the archive/checksum pair.
+metadata, enforces the reviewed package allowlist, generates the internal
+manifest, extracts the result, and runs the packaged smoke test before
+transactionally publishing the archive, verified notes, and checksum file.
+
+Run the focused version/layout and two-clean-checkout regression:
+
+```bash
+bash tests/test_release_discipline.sh
+```
 
 ## Test groups
 
@@ -58,11 +65,11 @@ packaged smoke test before publishing the archive/checksum pair.
 | Unit | CLI, settings, layout, colors, content, and renderer primitives |
 | Fixtures | Device/network/battery fallbacks and portable compatibility |
 | Integration | Complete runtime, diagnostics, startup, security, performance, beta, documentation, and registry contracts |
-| Package | Reproducible extracted-artifact lifecycle |
+| Package | Reproducible extracted-artifact lifecycle, version synchronization, and clean-checkout layout |
 | Lifecycle | Transactional install, update, and uninstall |
 
 Every `tests/test_*.sh` file must be assigned to exactly one group. The
-registry fails on unassigned files and verifies a canonical total of 25.
+registry fails on unassigned files and verifies a canonical total of 26.
 
 ## Evidence levels
 
@@ -81,8 +88,9 @@ Those claims require the strict device workflows recorded in
 ## Release-tree boundary
 
 The package includes lifecycle scripts, runtime source, configuration examples,
-all public docs/assets, and the smoke/performance/beta tools. It excludes
-`.git`, `tests/`, CI configuration, and unrelated development files.
+all public docs/assets, the package allowlist, and the intentionally shipped
+smoke/performance/beta/package tools. It excludes `.git`, `tests/`, CI
+configuration, `scripts/quality-check.sh`, and unrelated development files.
 
 See [Release Artifacts](release-artifacts.md) for exact verification commands
-and [Architecture](architecture.md) for component ownership.
+and [Versioning](versioning.md) for release identity ownership.

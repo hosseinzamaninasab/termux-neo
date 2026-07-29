@@ -17,7 +17,7 @@ analysis when ShellCheck is available, and the complete test suite.
 | Unit | CLI, configuration, layout, colors, content, renderers, and UI |
 | Fixtures | Compatibility, module fallbacks, and safe data modules |
 | Integration | Diagnostics, render-once flow, startup, pipeline, security/failure-safety, performance/stability, and public-beta contracts |
-| Package | Reproducible artifact lifecycle and internal artifact smoke test |
+| Package | Reproducible artifact lifecycle, release identity, clean-checkout layout, and internal artifact smoke test |
 | Lifecycle | Installer, updater, and uninstaller transactions |
 
 `.github/workflows/quality.yml` runs the same command for pushes, pull
@@ -55,12 +55,19 @@ is recorded separately in
 
 ## Release artifact smoke verification
 
-`scripts/package-release.sh` extracts every newly built archive, validates its
-complete internal manifest, and runs the packaged
-`scripts/smoke-release.sh`. The smoke script checks packaged syntax, the
-version command, help, and one deterministic no-color render at width 56.
-Failure prevents the archive and checksum from being published to the output
-directory.
+`scripts/package-release.sh` validates strict version, CLI, prospective-tag,
+release-note, and package-layout synchronization before staging. It extracts
+every newly built archive, validates its complete internal manifest, and runs
+the packaged `scripts/smoke-release.sh`. The smoke script checks packaged
+syntax, the version command, help, and one deterministic no-color render at
+width 56. Failure prevents the archive, release notes, and checksum from being
+published to the output directory.
+
+`tests/test_release_discipline.sh` constructs one candidate snapshot, creates
+two clean checkouts with different branch states, and requires identical
+archive, checksum, release-note, and file-layout results. It also proves that
+invalid SemVer and mismatched CLI or release-note metadata fail before
+publication. Packaging never creates a Git tag.
 
 An extracted archive can repeat its own smoke verification:
 

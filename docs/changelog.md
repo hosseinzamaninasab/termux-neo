@@ -3,7 +3,7 @@
 This changelog records verified project checkpoints. It does not announce a
 GitHub release or tag; public release publication is a later release task.
 
-## Unreleased — documentation checkpoint
+## Unreleased — release-discipline checkpoint
 
 - Published the complete public documentation set for the frozen
   `0.9.0-beta` product.
@@ -12,6 +12,13 @@ GitHub release or tag; public release publication is a later release task.
 - Declared the project license as MIT by explicit owner choice.
 - Expanded the canonical quality gate from 24 to 25 test files with a
   documentation and link-integrity regression.
+- Made `VERSION` the explicit release-identity source for CLI output, package
+  names, the prospective tag, and verified release notes.
+- Added a reviewed package allowlist, versioned release-note output, a checksum
+  covering both published files, and two-clean-checkout reproducibility gates.
+- Expanded the canonical quality gate from 25 to 26 test files with a focused
+  release-discipline regression.
+- Did not create a Git tag, GitHub release, or `v1.0.0-rc.1` candidate.
 - No runtime, CLI, settings, theme, lifecycle, support, or version behavior
   changed.
 

@@ -25,9 +25,9 @@ bash scripts/quality-check.sh --list > "$list_file" 2> "$stderr_file" ||
     fail "quality test registry could not be listed"
 [[ ! -s "$stderr_file" ]] ||
     fail "quality test registry produced stderr"
-[[ "$(wc -l < "$list_file")" == "25" ]] ||
-    fail "quality registry does not contain 25 tests"
-[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "25" ]] ||
+[[ "$(wc -l < "$list_file")" == "26" ]] ||
+    fail "quality registry does not contain 26 tests"
+[[ "$(LC_ALL=C sort -u "$list_file" | wc -l)" == "26" ]] ||
     fail "quality registry contains duplicate tests"
 
 while IFS= read -r test_path; do
@@ -40,6 +40,8 @@ done < <(
 
 [[ "$(grep -Fc 'tests/test_documentation.sh' "$list_file")" == "1" ]] ||
     fail "documentation regression is not registered exactly once"
+[[ "$(grep -Fc 'tests/test_release_discipline.sh' "$list_file")" == "1" ]] ||
+    fail "release-discipline regression is not registered exactly once"
 
 set +e
 bash scripts/quality-check.sh --unknown \
@@ -100,5 +102,9 @@ grep -Fq \
     'bash "$verify_root/$package_name/scripts/smoke-release.sh"' \
     scripts/package-release.sh ||
     fail "release builder does not execute smoke from the extracted artifact"
+grep -Fq 'release/package-files.txt' scripts/package-release.sh ||
+    fail "release builder does not enforce the reviewed package layout"
+grep -Fq 'prospective tag: %s' scripts/package-release.sh ||
+    fail "release builder does not report the derived prospective tag"
 
 printf 'PASS: automated quality pipeline contract\n'

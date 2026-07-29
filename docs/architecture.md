@@ -68,10 +68,16 @@ reports. Startup integration remains a separate explicit command boundary.
 
 ## Release boundary
 
-`scripts/package-release.sh` builds a normalized source archive containing the
-runtime, lifecycle scripts, public documentation, and packaged verification
-tools. It creates `RELEASE_MANIFEST.sha256`, extracts the archive, verifies the
-manifest again, and runs `scripts/smoke-release.sh` before publication.
+`VERSION` owns the release identity. `scripts/package-release.sh` derives the
+CLI expectation, package/archive names, prospective tag, and release-notes
+path from that one value and fails closed when any version-bearing input
+disagrees.
+
+`release/package-files.txt` is the reviewed package allowlist. The builder
+copies exactly that layout, creates `RELEASE_MANIFEST.sha256`, extracts the
+normalized archive, verifies its layout and manifest again, and runs
+`scripts/smoke-release.sh` before publication. The external checksum covers
+both the archive and the exact versioned release-notes output.
 
 Development tests and Git metadata are excluded. The extracted artifact can
 install, update, uninstall, reproduce itself, and run its portable smoke,
@@ -79,7 +85,7 @@ performance, and beta checks without Git.
 
 ## Quality boundary
 
-`scripts/quality-check.sh` is the single registry and runner for all 25 test
+`scripts/quality-check.sh` is the single registry and runner for all 26 test
 files. Tests are assigned to unit, fixture, integration, package, or lifecycle
 groups. An unassigned test fails the registry.
 

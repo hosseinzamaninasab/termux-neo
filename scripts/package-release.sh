@@ -11,6 +11,7 @@ REPORT_FILE=""
 SUCCESS=0
 ARCHIVE_PUBLISHED=0
 CHECKSUM_PUBLISHED=0
+NOTES_PUBLISHED=0
 REPORT_READY=0
 REPORT_TEE_PID=""
 REPORT_ORIGINAL_STDOUT_FD=""
@@ -34,6 +35,54 @@ release_path_is_safe() {
     [[ "$value" != *"/./"* && "$value" != */. ]] || return 1
     [[ "$value" != *"/../"* && "$value" != */.. ]] || return 1
     [[ ! "$value" =~ [[:cntrl:]] ]]
+}
+
+release_relative_path_is_safe() {
+    local value="${1-}"
+
+    [[ "$value" =~ ^[A-Za-z0-9._/-]+$ ]] || return 1
+    [[ -n "$value" && "$value" != /* ]] || return 1
+    [[ "$value" != *"//"* ]] || return 1
+    [[ "$value" != "." && "$value" != "./"* ]] || return 1
+    [[ "$value" != *"/./"* && "$value" != */. ]] || return 1
+    [[ "$value" != ".." && "$value" != "../"* ]] || return 1
+    [[ "$value" != *"/../"* && "$value" != */.. ]]
+}
+
+release_version_is_semver() {
+    local value="${1-}"
+    local prerelease=""
+    local identifier=""
+    local -a identifiers=()
+
+    [[ "$value" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]] ||
+        return 1
+
+    prerelease="${BASH_REMATCH[5]-}"
+    [[ -n "$prerelease" ]] || return 0
+
+    IFS='.' read -r -a identifiers <<< "$prerelease"
+    for identifier in "${identifiers[@]}"; do
+        if [[ "$identifier" =~ ^[0-9]+$ &&
+              ${#identifier} -gt 1 &&
+              "${identifier:0:1}" == "0" ]]
+        then
+            return 1
+        fi
+    done
+    return 0
+}
+
+release_notes_require_field() {
+    local prefix="${1-}"
+    local expected="${2-}"
+    local expected_count=""
+    local field_count=""
+
+    expected_count="$(grep -Fxc -- "$expected" "$notes_source" || true)"
+    field_count="$(grep -Ec "^${prefix}" "$notes_source" || true)"
+    [[ "$expected_count" == "1" && "$field_count" == "1" ]] ||
+        release_fail "release notes metadata is inconsistent: $expected"
 }
 
 release_close_report() {
@@ -67,6 +116,9 @@ release_cleanup() {
         if (( CHECKSUM_PUBLISHED == 1 )); then
             rm -f -- "$OUTPUT_DIR/$checksum_name" || true
         fi
+        if (( NOTES_PUBLISHED == 1 )); then
+            rm -f -- "$OUTPUT_DIR/$notes_name" || true
+        fi
         if (( ARCHIVE_PUBLISHED == 1 )); then
             rm -f -- "$OUTPUT_DIR/$archive_name" || true
         fi
@@ -80,6 +132,8 @@ release_cleanup() {
         release_error "release report could not be completed"
         (( CHECKSUM_PUBLISHED == 0 )) ||
             rm -f -- "$OUTPUT_DIR/$checksum_name" || true
+        (( NOTES_PUBLISHED == 0 )) ||
+            rm -f -- "$OUTPUT_DIR/$notes_name" || true
         (( ARCHIVE_PUBLISHED == 0 )) ||
             rm -f -- "$OUTPUT_DIR/$archive_name" || true
         exit_code=1
@@ -103,7 +157,8 @@ release_path_is_safe "$OUTPUT_DIR" ||
     release_fail "output directory is not a safe absolute path"
 
 for required_command in \
-    bash chmod cp dirname find gzip mkdir mktemp mv rm sha256sum sort tar tee
+    bash chmod cmp cp dirname find grep gzip mkdir mktemp mv rm sha256sum \
+    sed sort tar tee
 do
     command -v "$required_command" >/dev/null 2>&1 ||
         release_fail "required command is unavailable: $required_command"
@@ -111,42 +166,33 @@ done
 
 [[ -d "$SOURCE_ROOT" && ! -L "$SOURCE_ROOT" ]] ||
     release_fail "source root is not a regular directory"
-[[ -f "$SOURCE_ROOT/VERSION" && -r "$SOURCE_ROOT/VERSION" ]] ||
+[[ -f "$SOURCE_ROOT/VERSION" && ! -L "$SOURCE_ROOT/VERSION" &&
+   -r "$SOURCE_ROOT/VERSION" ]] ||
     release_fail "VERSION is unavailable"
 
-IFS= read -r version < "$SOURCE_ROOT/VERSION" ||
-    release_fail "VERSION could not be read"
-[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] ||
-    release_fail "VERSION is invalid"
+{
+    IFS= read -r version ||
+        release_fail "VERSION must contain one newline-terminated value"
+    extra_version_line=""
+    if IFS= read -r extra_version_line || [[ -n "$extra_version_line" ]]; then
+        release_fail "VERSION must contain exactly one line"
+    fi
+} < "$SOURCE_ROOT/VERSION"
+release_version_is_semver "$version" ||
+    release_fail "VERSION is not valid project SemVer"
 
 package_name="termux-neo-$version"
 archive_name="$package_name.tar.gz"
 checksum_name="$archive_name.sha256"
+notes_name="$package_name-release-notes.md"
 report_name="$package_name-release-report.txt"
-
-if [[ ! -e "$OUTPUT_DIR" && ! -L "$OUTPUT_DIR" ]]; then
-    mkdir -p -- "$OUTPUT_DIR" ||
-        release_fail "output directory could not be created"
-fi
-[[ -d "$OUTPUT_DIR" && ! -L "$OUTPUT_DIR" ]] ||
-    release_fail "output path is not a regular directory"
-
-REPORT_FILE="$OUTPUT_DIR/$report_name"
-
-[[ ! -e "$OUTPUT_DIR/$archive_name" &&
-   ! -L "$OUTPUT_DIR/$archive_name" ]] ||
-    release_fail "archive already exists: $OUTPUT_DIR/$archive_name"
-[[ ! -e "$OUTPUT_DIR/$checksum_name" &&
-   ! -L "$OUTPUT_DIR/$checksum_name" ]] ||
-    release_fail "checksum already exists: $OUTPUT_DIR/$checksum_name"
-if [[ -e "$REPORT_FILE" || -L "$REPORT_FILE" ]]; then
-    [[ -f "$REPORT_FILE" && ! -L "$REPORT_FILE" ]] ||
-        release_fail "release report path is not a regular file"
-fi
+release_tag="v$version"
+layout_file="$SOURCE_ROOT/release/package-files.txt"
+notes_source="$SOURCE_ROOT/docs/releases/$version.md"
 
 for required_path in \
     VERSION LICENSE README.md install.sh update.sh uninstall.sh \
-    bin config docs src scripts/package-release.sh \
+    bin config docs release src scripts/package-release.sh \
     scripts/beta-field-test.sh scripts/performance-check.sh \
     scripts/smoke-release.sh
 do
@@ -166,6 +212,7 @@ unexpected_link="$(
         "$SOURCE_ROOT/bin" \
         "$SOURCE_ROOT/config" \
         "$SOURCE_ROOT/docs" \
+        "$SOURCE_ROOT/release" \
         "$SOURCE_ROOT/src" \
         "$SOURCE_ROOT/scripts/package-release.sh" \
         "$SOURCE_ROOT/scripts/beta-field-test.sh" \
@@ -176,11 +223,104 @@ unexpected_link="$(
 [[ -z "$unexpected_link" ]] ||
     release_fail "package source contains a symbolic link: $unexpected_link"
 
+[[ -f "$layout_file" && ! -L "$layout_file" &&
+   -r "$layout_file" && -s "$layout_file" ]] ||
+    release_fail "package layout is unavailable"
+LC_ALL=C sort -c -u "$layout_file" >/dev/null 2>&1 ||
+    release_fail "package layout must be sorted and unique"
+
+declare -A release_layout_paths=()
+layout_count=0
+while IFS= read -r relative_path || [[ -n "$relative_path" ]]; do
+    release_relative_path_is_safe "$relative_path" ||
+        release_fail "package layout path is unsafe: $relative_path"
+    case "$relative_path" in
+        VERSION|LICENSE|README.md|install.sh|update.sh|uninstall.sh|\
+        bin/*|config/*|docs/*|src/*|release/package-files.txt|\
+        scripts/package-release.sh|scripts/beta-field-test.sh|\
+        scripts/performance-check.sh|scripts/smoke-release.sh)
+            ;;
+        *)
+            release_fail \
+                "package layout contains a development-only path: $relative_path"
+            ;;
+    esac
+    [[ -z "${release_layout_paths[$relative_path]+present}" ]] ||
+        release_fail "package layout path is duplicated: $relative_path"
+    [[ -f "$SOURCE_ROOT/$relative_path" &&
+       ! -L "$SOURCE_ROOT/$relative_path" &&
+       -r "$SOURCE_ROOT/$relative_path" ]] ||
+        release_fail "package layout path is unavailable: $relative_path"
+    release_layout_paths["$relative_path"]=1
+    layout_count=$((layout_count + 1))
+done < "$layout_file"
+(( layout_count > 0 )) || release_fail "package layout is empty"
+[[ -n "${release_layout_paths[release/package-files.txt]+present}" ]] ||
+    release_fail "package layout does not include itself"
+[[ -n "${release_layout_paths[docs/releases/$version.md]+present}" ]] ||
+    release_fail "package layout does not include current release notes"
+
+while IFS= read -r -d '' discovered_path; do
+    relative_path="${discovered_path#"$SOURCE_ROOT/"}"
+    [[ -n "${release_layout_paths[$relative_path]+present}" ]] ||
+        release_fail "package source path is unlisted: $relative_path"
+done < <(
+    find \
+        "$SOURCE_ROOT/bin" \
+        "$SOURCE_ROOT/config" \
+        "$SOURCE_ROOT/docs" \
+        "$SOURCE_ROOT/release" \
+        "$SOURCE_ROOT/src" \
+        -type f -print0
+)
+
 bash -n "$SOURCE_ROOT/src/release.sh" ||
     release_fail "release manifest boundary failed syntax validation"
 source "$SOURCE_ROOT/src/release.sh"
 termux_neo_release_manifest_verify "$SOURCE_ROOT" release_error ||
     release_fail "source release manifest verification failed"
+
+[[ -f "$notes_source" && ! -L "$notes_source" &&
+   -r "$notes_source" && -s "$notes_source" ]] ||
+    release_fail "release notes are unavailable: docs/releases/$version.md"
+release_notes_require_field \
+    "Release version:" "Release version: \`$version\`"
+release_notes_require_field \
+    "Prospective tag:" "Prospective tag: \`$release_tag\`"
+release_notes_require_field \
+    "Archive:" "Archive: \`$archive_name\`"
+release_notes_require_field \
+    "Publication status:" \
+    "Publication status: checkpoint only; no Git tag or public release."
+
+cli_version_output="$(
+    bash "$SOURCE_ROOT/src/main.sh" --version 2>/dev/null
+)" || release_fail "CLI version could not be read"
+[[ "$cli_version_output" == "termux-neo $version" ]] ||
+    release_fail "VERSION and CLI version disagree"
+
+if [[ ! -e "$OUTPUT_DIR" && ! -L "$OUTPUT_DIR" ]]; then
+    mkdir -p -- "$OUTPUT_DIR" ||
+        release_fail "output directory could not be created"
+fi
+[[ -d "$OUTPUT_DIR" && ! -L "$OUTPUT_DIR" ]] ||
+    release_fail "output path is not a regular directory"
+
+REPORT_FILE="$OUTPUT_DIR/$report_name"
+
+[[ ! -e "$OUTPUT_DIR/$archive_name" &&
+   ! -L "$OUTPUT_DIR/$archive_name" ]] ||
+    release_fail "archive already exists: $OUTPUT_DIR/$archive_name"
+[[ ! -e "$OUTPUT_DIR/$checksum_name" &&
+   ! -L "$OUTPUT_DIR/$checksum_name" ]] ||
+    release_fail "checksum already exists: $OUTPUT_DIR/$checksum_name"
+[[ ! -e "$OUTPUT_DIR/$notes_name" &&
+   ! -L "$OUTPUT_DIR/$notes_name" ]] ||
+    release_fail "release notes already exist: $OUTPUT_DIR/$notes_name"
+if [[ -e "$REPORT_FILE" || -L "$REPORT_FILE" ]]; then
+    [[ -f "$REPORT_FILE" && ! -L "$REPORT_FILE" ]] ||
+        release_fail "release report path is not a regular file"
+fi
 
 umask 077
 if [[ -e "$REPORT_FILE" ]]; then
@@ -200,6 +340,7 @@ REPORT_READY=1
 
 printf '===== Termux Neo release packaging =====\n'
 printf 'version: %s\n' "$version"
+printf 'prospective tag: %s\n' "$release_tag"
 printf 'source: %s\n' "$SOURCE_ROOT"
 printf 'output: %s\n\n' "$OUTPUT_DIR"
 
@@ -226,28 +367,14 @@ package_root="$stage_parent/$package_name"
 verify_root="$TEMP_DIR/verify"
 archive_temp="$TEMP_DIR/$archive_name"
 checksum_temp="$TEMP_DIR/$checksum_name"
+notes_temp="$TEMP_DIR/$notes_name"
 
-mkdir "$stage_parent" "$package_root" "$package_root/scripts" "$verify_root"
-cp -p \
-    "$SOURCE_ROOT/VERSION" \
-    "$SOURCE_ROOT/LICENSE" \
-    "$SOURCE_ROOT/README.md" \
-    "$SOURCE_ROOT/install.sh" \
-    "$SOURCE_ROOT/update.sh" \
-    "$SOURCE_ROOT/uninstall.sh" \
-    "$package_root/"
-cp -pR \
-    "$SOURCE_ROOT/bin" \
-    "$SOURCE_ROOT/config" \
-    "$SOURCE_ROOT/docs" \
-    "$SOURCE_ROOT/src" \
-    "$package_root/"
-cp -p \
-    "$SOURCE_ROOT/scripts/package-release.sh" \
-    "$SOURCE_ROOT/scripts/beta-field-test.sh" \
-    "$SOURCE_ROOT/scripts/performance-check.sh" \
-    "$SOURCE_ROOT/scripts/smoke-release.sh" \
-    "$package_root/scripts/"
+mkdir "$stage_parent" "$package_root" "$verify_root"
+while IFS= read -r relative_path; do
+    destination_path="$package_root/$relative_path"
+    mkdir -p -- "$(dirname "$destination_path")"
+    cp -p -- "$SOURCE_ROOT/$relative_path" "$destination_path"
+done < "$layout_file"
 
 find "$package_root" -type d -exec chmod 755 {} +
 find "$package_root" -type f -exec chmod 644 {} +
@@ -277,6 +404,16 @@ chmod 644 "$package_root/RELEASE_MANIFEST.sha256"
 termux_neo_release_manifest_verify "$package_root" release_error ||
     release_fail "staged release manifest verification failed"
 
+staged_layout_file="$TEMP_DIR/staged-layout.txt"
+(
+    cd "$package_root"
+    find . -type f ! -name RELEASE_MANIFEST.sha256 -print |
+        sed 's|^\./||' |
+        LC_ALL=C sort
+) > "$staged_layout_file"
+cmp -s "$layout_file" "$staged_layout_file" ||
+    release_fail "staged package layout is inconsistent"
+
 tar \
     --sort=name \
     --format=ustar \
@@ -301,21 +438,35 @@ termux_neo_release_manifest_verify "$verify_root/$package_name" release_error ||
 bash "$verify_root/$package_name/scripts/smoke-release.sh" ||
     release_fail "archive smoke verification failed"
 
+cp -p -- "$notes_source" "$notes_temp"
+chmod 644 "$notes_temp"
+cmp -s "$notes_source" "$notes_temp" ||
+    release_fail "release notes generation is inconsistent"
+
 archive_checksum="$(sha256sum -- "$archive_temp")"
 archive_checksum="${archive_checksum%% *}"
 [[ "$archive_checksum" =~ ^[0-9a-f]{64}$ ]] ||
     release_fail "archive checksum is invalid"
-printf '%s  %s\n' "$archive_checksum" "$archive_name" > "$checksum_temp"
+notes_checksum="$(sha256sum -- "$notes_temp")"
+notes_checksum="${notes_checksum%% *}"
+[[ "$notes_checksum" =~ ^[0-9a-f]{64}$ ]] ||
+    release_fail "release notes checksum is invalid"
+printf '%s  %s\n%s  %s\n' \
+    "$archive_checksum" "$archive_name" \
+    "$notes_checksum" "$notes_name" > "$checksum_temp"
 chmod 644 "$archive_temp" "$checksum_temp"
 
 mv -- "$archive_temp" "$OUTPUT_DIR/$archive_name"
 ARCHIVE_PUBLISHED=1
+mv -- "$notes_temp" "$OUTPUT_DIR/$notes_name"
+NOTES_PUBLISHED=1
 mv -- "$checksum_temp" "$OUTPUT_DIR/$checksum_name"
 CHECKSUM_PUBLISHED=1
 
 printf '\nPASS: reproducible release artifact created and verified\n'
 printf 'archive: %s\n' "$OUTPUT_DIR/$archive_name"
 printf 'checksum: %s\n' "$OUTPUT_DIR/$checksum_name"
+printf 'release notes: %s\n' "$OUTPUT_DIR/$notes_name"
 printf 'release report: %s\n' "$REPORT_FILE"
 
 SUCCESS=1

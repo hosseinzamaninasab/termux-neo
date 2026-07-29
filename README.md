@@ -124,6 +124,8 @@ Canonical checkpoint references:
 | Reviewed trust boundaries | [Security review](docs/security.md) |
 | Current constraints | [Known limitations](docs/known-limitations.md) |
 | Verified milestones | [Changelog](docs/changelog.md) |
+| Semantic Versioning and release identity | [Versioning](docs/versioning.md) |
+| Current verified release notes | [0.9.0-beta release notes](docs/releases/0.9.0-beta.md) |
 | Artifact creation and verification | [Release artifacts](docs/release-artifacts.md) |
 | Canonical quality pipeline | [Quality](docs/quality.md) |
 | Performance and stability | [Performance](docs/performance.md) |
@@ -141,9 +143,9 @@ The canonical local and CI gate is:
 bash scripts/quality-check.sh
 ```
 
-It runs syntax/static checks and all 25 assigned test files, including the
-documentation and extracted-artifact regressions. Portable CI does not replace
-physical device evidence.
+It runs syntax/static checks and all 26 assigned test files, including the
+documentation, release-discipline, clean-checkout, and extracted-artifact
+regressions. Portable CI does not replace physical device evidence.
 
 ## License
 

@@ -19,6 +19,7 @@ command_path="$test_prefix/bin/termux-neo"
 config_path="$test_home/.config/termux-neo/settings.conf"
 archive_name="termux-neo-0.9.0-beta.tar.gz"
 checksum_name="$archive_name.sha256"
+notes_name="termux-neo-0.9.0-beta-release-notes.md"
 report_name="termux-neo-0.9.0-beta-release-report.txt"
 package_root="$extract_root/termux-neo-0.9.0-beta"
 public_documentation=(
@@ -43,6 +44,7 @@ public_documentation=(
     docs/project-overview.md
     docs/quality.md
     docs/release-artifacts.md
+    docs/releases/0.9.0-beta.md
     docs/security-policy.md
     docs/security.md
     docs/settings-schema-v1.md
@@ -50,6 +52,7 @@ public_documentation=(
     docs/troubleshooting.md
     docs/uninstallation.md
     docs/update.md
+    docs/versioning.md
     docs/assets/dashboard-matrix.svg
     docs/assets/dashboard-neo.svg
 )
@@ -73,7 +76,7 @@ fail() {
 
 cp -p VERSION LICENSE README.md install.sh update.sh uninstall.sh \
     "$source_fixture/"
-cp -pR bin config docs src "$source_fixture/"
+cp -pR bin config docs release src "$source_fixture/"
 cp -p \
     scripts/package-release.sh \
     scripts/beta-field-test.sh \
@@ -117,6 +120,9 @@ for output_dir in "$output_a" "$output_b"; do
     [[ -f "$output_dir/$checksum_name" &&
        ! -L "$output_dir/$checksum_name" ]] ||
         fail "archive checksum is missing"
+    [[ -f "$output_dir/$notes_name" &&
+       ! -L "$output_dir/$notes_name" ]] ||
+        fail "versioned release notes are missing"
     [[ -f "$output_dir/$report_name" &&
        ! -L "$output_dir/$report_name" ]] ||
         fail "release report is missing"
@@ -124,6 +130,8 @@ for output_dir in "$output_a" "$output_b"; do
         fail "archive mode is not 644"
     [[ "$(stat -c '%a' "$output_dir/$checksum_name")" == "644" ]] ||
         fail "checksum mode is not 644"
+    [[ "$(stat -c '%a' "$output_dir/$notes_name")" == "644" ]] ||
+        fail "release notes mode is not 644"
     [[ "$(stat -c '%a' "$output_dir/$report_name")" == "600" ]] ||
         fail "release report mode is not 600"
     (
@@ -137,16 +145,33 @@ cmp -s "$output_a/$archive_name" "$output_b/$archive_name" ||
     fail "two clean builds produced different archive bytes"
 cmp -s "$output_a/$checksum_name" "$output_b/$checksum_name" ||
     fail "two clean builds produced different checksum bytes"
+cmp -s "$output_a/$notes_name" "$output_b/$notes_name" ||
+    fail "two clean builds produced different release-note bytes"
+cmp -s "docs/releases/0.9.0-beta.md" "$output_a/$notes_name" ||
+    fail "published release notes differ from the verified source"
 
 tar -tzf "$output_a/$archive_name" > "$fixture/archive-list"
 grep -Fqx 'termux-neo-0.9.0-beta/RELEASE_MANIFEST.sha256' \
     "$fixture/archive-list" ||
     fail "internal release manifest is missing from the archive"
-if grep -Eq '(^/|(^|/)\.\.(/|$)|(^|/)\.git(/|$)|(^|/)tests(/|$))' \
+grep -Fqx 'termux-neo-0.9.0-beta/release/package-files.txt' \
+    "$fixture/archive-list" ||
+    fail "reviewed package layout is missing from the archive"
+if grep -Eq '(^/|(^|/)\.\.(/|$)|(^|/)\.git(/|$)|(^|/)\.github(/|$)|(^|/)tests(/|$)|scripts/quality-check\.sh$)' \
     "$fixture/archive-list"
 then
     fail "archive contains an unsafe or development-only path"
 fi
+
+grep -v '/$' "$fixture/archive-list" |
+    sed 's|^termux-neo-0.9.0-beta/||' |
+    LC_ALL=C sort > "$fixture/archive-files"
+{
+    cat release/package-files.txt
+    printf '%s\n' RELEASE_MANIFEST.sha256
+} | LC_ALL=C sort > "$fixture/expected-archive-files"
+cmp -s "$fixture/expected-archive-files" "$fixture/archive-files" ||
+    fail "archive files differ from the reviewed package layout"
 
 tar --extract --gzip --same-permissions \
     --file "$output_a/$archive_name" \
@@ -155,6 +180,9 @@ tar --extract --gzip --same-permissions \
     fail "versioned archive root is missing"
 [[ ! -e "$package_root/.git" && ! -e "$package_root/tests" ]] ||
     fail "extracted release contains development metadata"
+[[ ! -e "$package_root/.github" &&
+   ! -e "$package_root/scripts/quality-check.sh" ]] ||
+    fail "extracted release contains development-only tooling"
 (
     cd "$package_root"
     sha256sum -c RELEASE_MANIFEST.sha256
@@ -187,6 +215,8 @@ cmp -s "$output_a/$archive_name" "$output_c/$archive_name" ||
     fail "extracted release did not reproduce identical archive bytes"
 cmp -s "$output_a/$checksum_name" "$output_c/$checksum_name" ||
     fail "extracted release did not reproduce identical checksum bytes"
+cmp -s "$output_a/$notes_name" "$output_c/$notes_name" ||
+    fail "extracted release did not reproduce identical release-note bytes"
 
 [[ "$(stat -c '%a' "$package_root/install.sh")" == "755" ]] ||
     fail "packaged installer mode is not 755"
@@ -263,8 +293,9 @@ grep -Fq 'archive smoke verification failed' \
     "$fixture/smoke-failure.stdout" ||
     fail "release smoke failure was not reported"
 [[ ! -e "$output_d/$archive_name" &&
-   ! -e "$output_d/$checksum_name" ]] ||
-    fail "failed smoke verification published an archive or checksum"
+   ! -e "$output_d/$checksum_name" &&
+   ! -e "$output_d/$notes_name" ]] ||
+    fail "failed smoke verification published a release output"
 
 # A changed package file fails manifest validation before any installed path
 # is created.

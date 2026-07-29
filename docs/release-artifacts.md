@@ -23,19 +23,35 @@ For version `0.9.0-beta`, the command creates:
 ```text
 termux-neo-0.9.0-beta.tar.gz
 termux-neo-0.9.0-beta.tar.gz.sha256
+termux-neo-0.9.0-beta-release-notes.md
 termux-neo-0.9.0-beta-release-report.txt
 ```
 
-The archive is reproducible: file order, timestamps, ownership metadata, and
-gzip metadata are normalized. The report is mode `0600`; the archive and
-checksum file are mode `0644`. Existing artifacts are never overwritten.
-Before publication, the builder extracts the archive, validates its internal
-manifest, and runs the packaged smoke verification. A smoke failure leaves no
-archive or checksum in the output directory.
+`VERSION` is the canonical release identity. The builder requires the CLI,
+archive/root name, prospective `v0.9.0-beta` tag, and
+`docs/releases/0.9.0-beta.md` metadata to agree before staging. See
+[Versioning](versioning.md) for the complete fail-closed contract.
+
+The archive is reproducible: package layout, file order, timestamps, ownership
+metadata, permissions, and gzip metadata are normalized. The report is mode
+`0600`; the archive, notes, and checksum file are mode `0644`. Existing outputs
+are never overwritten.
+
+`release/package-files.txt` is the exact reviewed allowlist. Development-only
+tests, CI/Git metadata, and `scripts/quality-check.sh` cannot enter the archive.
+Before publication, the builder compares the staged tree to that allowlist,
+extracts the archive, validates its internal manifest, and runs the packaged
+smoke verification.
+
+The external checksum file contains two entries in deterministic order: the
+archive and the exact versioned release notes. A metadata, layout, manifest,
+smoke, checksum, or final-move failure leaves no archive, notes, or checksum in
+the output directory.
 
 ## Verify and install a downloaded archive
 
-Place both published files in the fixed download directory, then run:
+Place the archive, release notes, and checksum file in the fixed download
+directory, then run:
 
 ```bash
 cd "$HOME/storage/downloads/Telegram"
@@ -54,17 +70,19 @@ bash install.sh
 ```
 
 The external checksum verifies archive integrity against the supplied digest;
-it is not a digital signature and cannot authenticate an untrusted publisher
-by itself. Obtain both files from the trusted project release channel and
-verify the checksum before extraction. The internal
+it also verifies the release-note bytes. It is not a digital signature and
+cannot authenticate an untrusted publisher by itself. Obtain all release files
+from the trusted project release channel and verify the checksum before
+extraction. The internal
 `RELEASE_MANIFEST.sha256` covers every packaged file except itself. The
 installer, updater, and uninstaller also validate that manifest automatically
 before any installed path changes. Unsafe, duplicate, missing, unlisted,
 symlinked, or checksum-mismatched entries fail closed.
 
-The builder refuses a symlinked report target. Archive and checksum
-publication is treated as one failure-safe boundary: if either final move
-fails, any half-published counterpart is removed.
+The builder refuses symlinked source/output boundaries and a symlinked report
+target. Archive, release-note, and checksum publication is treated as one
+failure-safe boundary: if any final move fails, every half-published
+counterpart is removed.
 
 The packaged smoke script checks runtime syntax, version/help dispatch, and a
 deterministic no-color render. It reads the extracted tree and uses a private
@@ -86,3 +104,13 @@ bash uninstall.sh
 User settings retain the same preservation and migration guarantees documented
 for source-tree installation. Startup integration remains explicit and is not
 enabled by packaging or installation.
+
+## Clean-checkout reproducibility
+
+The release-discipline regression creates two clean checkouts of the same
+candidate snapshot with different branch states. Both must produce identical
+archive, release-note, checksum, and file-layout bytes. The builder reads no
+branch name, commit description, or tag when producing artifacts.
+
+Packaging only reports the derived prospective tag. It never runs `git tag`,
+creates a GitHub release, pushes, or uploads an artifact.
