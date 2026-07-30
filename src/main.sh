@@ -165,8 +165,6 @@ termux_neo_render_once() {
         ui_render || exit 1
         printf '\n'
         ui_render_status || exit 1
-        printf '\n'
-        ui_render_prompt || exit 1
     )" || return 1
 
     printf '%s\n' "$output"
