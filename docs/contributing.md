@@ -1,18 +1,18 @@
 # Contributing
 
 Contributions are welcome under the project's
-[MIT License](../LICENSE). The current `1.0.0-rc.1` candidate is under
-[Feature Freeze](feature-freeze.md), so contribution scope is intentionally
-narrow.
+[MIT License](../LICENSE). Stable `1.0.0` is released and its completed
+[Feature Freeze](feature-freeze.md) remains the immutable release boundary.
+New scope requires a separately approved post-1.0 milestone.
 
 ## Before opening a change
 
 - Search existing issues and the [Beta Issue Ledger](beta-issues.md).
 - Use [private vulnerability reporting](security-policy.md) for security
   findings; do not publish exploit details in a normal issue.
-- Confirm the proposal fits the active freeze. New commands, settings, themes,
-  background behavior, supported shells, install locations, or broad support
-  claims are deferred.
+- Confirm the proposal does not rewrite the verified `1.0.0` boundary. New
+  commands, settings, themes, background behavior, supported shells, install
+  locations, or broad support claims require a new approved milestone.
 - For device-specific claims, provide real-device evidence. A portable fixture
   alone is not sufficient.
 

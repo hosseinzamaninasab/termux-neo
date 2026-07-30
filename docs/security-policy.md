@@ -4,12 +4,13 @@
 
 | Version | Security fixes |
 | --- | --- |
-| `1.0.0-rc.1` | Supported during the active Feature Freeze |
-| `0.9.0-beta` | Superseded by the release candidate |
+| `1.0.0` | Current supported stable release |
+| `1.0.0-rc.1` | Superseded by the stable release |
+| `0.9.0-beta` | Superseded |
 | Earlier development checkpoints | Not supported |
 
-Security fixes remain allowed during Feature Freeze and must pass focused
-regression coverage, the full quality pipeline, and the release-artifact gate.
+Security fixes require focused regression coverage, the full quality pipeline,
+the release-artifact gate, and a separately versioned release.
 
 ## Report privately
 

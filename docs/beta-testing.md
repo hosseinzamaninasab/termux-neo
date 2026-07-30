@@ -1,7 +1,8 @@
-# Release Candidate Testing
+# Stable Release Verification
 
-Termux Neo `1.0.0-rc.1` is feature-frozen. Candidate work validates the
-existing product and release lifecycle; it does not expand product scope.
+Termux Neo `1.0.0` preserves the feature-frozen release-candidate behavior.
+Stable verification validates the existing product and release lifecycle; it
+does not expand product scope.
 
 ## Safe field command
 
@@ -29,20 +30,20 @@ On a real Termux device, use an output path outside the release tree:
 
 ```bash
 bash scripts/beta-field-test.sh --record \
-    "$HOME/storage/downloads/Telegram/task31-device-report.md"
+    "$HOME/storage/downloads/Telegram/task32-device-report.md"
 ```
 
-Record mode builds and verifies the candidate artifact, runs its smoke and
+Record mode builds and verifies the stable artifact, runs its smoke and
 repeated-render checks, and exercises the same lifecycle in isolated paths.
 It pauses twice: rotate the device to portrait and then landscape, waiting for
 Termux to resize before pressing Enter each time.
 
 The generated Markdown contains only device model, Android and Bash versions,
 terminal widths, aggregate PASS/FAIL results, and defect counts. For this
-candidate it is release evidence only when the reference device is `samsung`
-`SM-N920C` on Android `11`. It excludes HOME, PREFIX, usernames, local IP
-addresses, settings values, and raw rendered device data. Review the file
-before sharing it.
+stable release it is release evidence only when the reference device is
+`samsung` `SM-N920C` on Android `11`. It excludes HOME, PREFIX, usernames,
+local IP addresses, settings values, and raw rendered device data. Review the
+file before sharing it.
 
 One report supports only its recorded environment. Additional devices can be
 added only through separately retained reports; their absence must not be
@@ -50,7 +51,7 @@ rewritten as a broad Android or Termux compatibility claim.
 
 ## Feedback
 
-Before filing a candidate issue:
+Before filing a stable-release issue:
 
 1. Verify the artifact's external checksum and internal manifest.
 2. Record `termux-neo --version`.
@@ -61,5 +62,6 @@ Before filing a candidate issue:
 6. Redact usernames, local paths, IP addresses, and unrelated terminal output.
 
 Accepted issues follow [beta-issues.md](beta-issues.md). Feature requests are
-recorded as enhancements and deferred under
+recorded as enhancements and require a separately approved post-1.0 milestone.
+The completed release boundary is recorded in
 [feature-freeze.md](feature-freeze.md).

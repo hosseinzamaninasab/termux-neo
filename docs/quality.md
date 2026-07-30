@@ -16,7 +16,7 @@ analysis when ShellCheck is available, and the complete test suite.
 | --- | --- |
 | Unit | CLI, configuration, layout, colors, content, renderers, and UI |
 | Fixtures | Compatibility, module fallbacks, and safe data modules |
-| Integration | Diagnostics, render-once flow, startup, pipeline, security/failure-safety, performance/stability, and candidate contracts |
+| Integration | Diagnostics, render-once flow, startup, pipeline, security/failure-safety, performance/stability, and stable-release contracts |
 | Package | Reproducible artifact lifecycle, release identity, clean-checkout layout, and internal artifact smoke test |
 | Lifecycle | Installer, updater, and uninstaller transactions |
 
@@ -41,7 +41,7 @@ CI does not establish reference-device timing. The measured Samsung
 measurement-derived budget are recorded separately in
 [`performance-baseline.md`](performance-baseline.md).
 
-The portable release-candidate matrix can be run directly:
+The portable stable-release matrix can be run directly:
 
 ```bash
 bash scripts/beta-field-test.sh --self-test
@@ -52,7 +52,7 @@ geometry scenarios without changing the user's installation. CI proves the
 portable matrix only. The strict real-device and physical-orientation result
 must be written separately with `--record`; the committed
 [`beta-field-report.md`](beta-field-report.md) remains the historical Task 28
-beta record and is not silently rewritten as candidate evidence.
+beta record and is not silently rewritten as stable-release evidence.
 
 ## Release artifact smoke verification
 
@@ -64,7 +64,7 @@ syntax, the version command, help, and one deterministic no-color render at
 width 56. Failure prevents the archive, release notes, and checksum from being
 published to the output directory.
 
-`tests/test_release_discipline.sh` constructs one candidate snapshot, creates
+`tests/test_release_discipline.sh` constructs one stable snapshot, creates
 two clean checkouts with different branch states, and requires identical
 archive, checksum, release-note, and file-layout results. It also proves that
 invalid SemVer and mismatched CLI or release-note metadata fail before

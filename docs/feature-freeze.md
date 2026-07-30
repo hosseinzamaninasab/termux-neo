@@ -3,12 +3,12 @@
 Status:
 
 ```text
-ACTIVE — 1.0.0-rc.1
+COMPLETE — 1.0.0
 ```
 
-The stable-release branch is frozen at the Task 31 release-candidate checkpoint.
-Product scope, CLI surface, configuration schema, themes, render geometry, and
-lifecycle ownership may not expand before `v1.0.0`.
+The stable-release branch completed its freeze at the verified `v1.0.0`
+checkpoint. Product scope, CLI surface, configuration schema, themes, render
+geometry, and lifecycle ownership did not expand after the Task 31 candidate.
 
 ## Changes allowed during the freeze
 
@@ -29,7 +29,6 @@ New commands, settings keys, themes, background behavior, telemetry, supported
 shells, installation locations, and unrelated refactors are deferred. A change
 does not become freeze-safe merely because it is small.
 
-The freeze remains active through public documentation, packaging discipline,
-and release-candidate testing. It ends only after the stable `v1.0.0`
-checkpoint is verified or the Project Master explicitly revises the release
-plan.
+These rules remain the historical release policy for `v1.0.0`. Any later
+change belongs to a separately approved version and must not rewrite the
+stable checkpoint.

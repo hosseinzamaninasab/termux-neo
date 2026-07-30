@@ -1,6 +1,6 @@
 # Known Limitations
 
-This document describes the frozen `1.0.0-rc.1` boundary. A limitation is not
+This document describes the stable `1.0.0` boundary. A limitation is not
 an implied future commitment.
 
 ## Environment evidence
@@ -44,13 +44,13 @@ an implied future commitment.
   orientation, distribution provenance, or device performance.
 - Recorded startup measurements are specific to the reference device and
   measured software checkpoint; they are not a universal performance target.
-- No additional real device was available at the release-candidate checkpoint.
+- No additional real device was available at the stable-release checkpoint.
 
 ## Freeze
 
-New commands, settings, themes, background behavior, supported shells,
-installation paths, telemetry, and broader support claims are deferred while
-[Feature Freeze](feature-freeze.md) is active.
+The [Feature Freeze](feature-freeze.md) is complete. New commands, settings,
+themes, background behavior, supported shells, installation paths, telemetry,
+and broader support claims require a separately approved post-1.0 milestone.
 
 See [Compatibility](compatibility.md) for the evidence matrix and
 [Troubleshooting](troubleshooting.md) for safe fallback behavior.

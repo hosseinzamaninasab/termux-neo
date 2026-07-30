@@ -1,20 +1,31 @@
 # Production Installation
 
-Run the installer from a complete Termux Neo source tree or from a verified,
-extracted release archive:
+The stable `v1.0.0` archive is public at:
+
+```text
+https://github.com/hosseinzamaninasab/termux-neo/releases/tag/v1.0.0
+```
+
+Download the archive, checksum, and release notes from that page. Exact
+anonymous download, checksum, extraction, and manifest commands are in
+[release-artifacts.md](release-artifacts.md).
+
+Run the installer from the verified, extracted release archive or from a
+complete Termux Neo source tree:
 
 ```bash
 bash install.sh
 ```
 
-A published archive does not require Git or branch selection. Verify its
+A published archive does not require Git, GitHub authentication, root, or
+branch selection. Verify its
 external checksum and complete internal file manifest before installation.
 Exact local-archive commands and the reproducible packaging command are in
 [release-artifacts.md](release-artifacts.md). When the internal manifest is
 present, the installer validates it again automatically before any installed
 path changes.
 
-The installer does not require root and writes only these owned locations:
+The installer writes only these owned locations:
 
 ```text
 $PREFIX/lib/termux-neo/

@@ -68,7 +68,7 @@ grep -Fq -- '--startup' "$stdout_file" ||
 [[ ! -s "$stderr_file" ]] || fail "help produced stderr"
 
 run_cli 0 --version
-[[ "$(cat "$stdout_file")" == "termux-neo 1.0.0-rc.1" ]] ||
+[[ "$(cat "$stdout_file")" == "termux-neo 1.0.0" ]] ||
     fail "version output mismatch"
 [[ ! -s "$stderr_file" ]] || fail "version produced stderr"
 

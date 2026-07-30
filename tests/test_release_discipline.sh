@@ -12,11 +12,11 @@ output_a="$fixture/output-a"
 output_b="$fixture/output-b"
 extract_root="$fixture/extract"
 fake_bin="$fixture/fake-bin"
-archive_name="termux-neo-1.0.0-rc.1.tar.gz"
+archive_name="termux-neo-1.0.0.tar.gz"
 checksum_name="$archive_name.sha256"
-notes_name="termux-neo-1.0.0-rc.1-release-notes.md"
-report_name="termux-neo-1.0.0-rc.1-release-report.txt"
-package_root="$extract_root/termux-neo-1.0.0-rc.1"
+notes_name="termux-neo-1.0.0-release-notes.md"
+report_name="termux-neo-1.0.0-release-report.txt"
+package_root="$extract_root/termux-neo-1.0.0"
 
 mkdir -p "$fixture" "$candidate" "$fake_bin"
 trap 'rm -rf "$fixture"' EXIT
@@ -35,24 +35,37 @@ done
 
 cd "$PROJECT_ROOT"
 
-[[ "$(cat VERSION)" == "1.0.0-rc.1" ]] ||
-    fail "release discipline does not target the candidate VERSION"
-grep -Fqx 'ACTIVE — 1.0.0-rc.1' docs/feature-freeze.md ||
-    fail "release discipline changed the active candidate freeze"
+[[ "$(cat VERSION)" == "1.0.0" ]] ||
+    fail "release discipline does not target the stable VERSION"
+grep -Fqx 'COMPLETE — 1.0.0' docs/feature-freeze.md ||
+    fail "release discipline changed the completed stable freeze"
 [[ -z "$(git tag --list v0.9.0-beta)" ]] ||
     fail "the historical beta tag must remain absent"
-if git show-ref --verify --quiet refs/tags/v1.0.0-rc.1; then
-    [[ "$(git cat-file -t v1.0.0-rc.1)" == "tag" ]] ||
-        fail "release-candidate tag is not annotated"
-    [[ "$(git rev-parse v1.0.0-rc.1^{})" == "$(git rev-parse HEAD)" ]] ||
-        fail "release-candidate tag does not target the tested commit"
+git show-ref --verify --quiet refs/tags/v1.0.0-rc.1 ||
+    fail "the immutable release-candidate tag is missing"
+[[ "$(git cat-file -t v1.0.0-rc.1)" == "tag" ]] ||
+    fail "release-candidate tag is not annotated"
+git merge-base --is-ancestor v1.0.0-rc.1^{} HEAD ||
+    fail "release-candidate tag is not an ancestor of the stable worktree"
+[[ "$(git for-each-ref \
+    --format='%(contents:subject)' refs/tags/v1.0.0-rc.1)" == \
+   "Termux Neo v1.0.0-rc.1" ]] ||
+    fail "release-candidate tag annotation is inconsistent"
+if git show-ref --verify --quiet refs/tags/v1.0.0; then
+    [[ "$(git cat-file -t v1.0.0)" == "tag" ]] ||
+        fail "stable tag is not annotated"
+    [[ "$(git rev-parse v1.0.0^{})" == "$(git rev-parse HEAD)" ]] ||
+        fail "stable tag does not target the tested commit"
     [[ "$(git for-each-ref \
-        --format='%(contents:subject)' refs/tags/v1.0.0-rc.1)" == \
-       "Termux Neo v1.0.0-rc.1" ]] ||
-        fail "release-candidate tag annotation is inconsistent"
+        --format='%(contents:subject)' refs/tags/v1.0.0)" == \
+       "Termux Neo v1.0.0" ]] ||
+        fail "stable tag annotation is inconsistent"
+    [[ "$(git rev-parse v1.0.0-rc.1^{})" != \
+       "$(git rev-parse v1.0.0^{})" ]] ||
+        fail "stable tag rewrote the release-candidate commit"
 fi
 
-# Capture the exact candidate worktree, including Task 31 identity, into one
+# Capture the exact stable worktree, including Task 32 identity, into one
 # temporary commit. Two clones of that commit are then genuine clean checkouts.
 candidate_paths="$fixture/candidate-paths.bin"
 {
@@ -63,7 +76,7 @@ candidate_paths="$fixture/candidate-paths.bin"
 while IFS= read -r -d '' relative_path; do
     [[ -f "$PROJECT_ROOT/$relative_path" &&
        ! -L "$PROJECT_ROOT/$relative_path" ]] ||
-        fail "candidate path is not a regular file: $relative_path"
+        fail "stable path is not a regular file: $relative_path"
     mkdir -p "$candidate/$(dirname "$relative_path")"
     cp -p "$PROJECT_ROOT/$relative_path" "$candidate/$relative_path"
 done < "$candidate_paths"
@@ -72,7 +85,7 @@ git -C "$candidate" init -q
 git -C "$candidate" config user.name "Termux Neo Test"
 git -C "$candidate" config user.email "termux-neo-test@example.invalid"
 git -C "$candidate" add --all
-git -C "$candidate" commit -qm "test: candidate release snapshot"
+git -C "$candidate" commit -qm "test: stable release snapshot"
 
 git clone -q --no-hardlinks "$candidate" "$checkout_a"
 git clone -q --no-hardlinks "$candidate" "$checkout_b"
@@ -81,7 +94,7 @@ git -C "$checkout_b" checkout -qb alternate-release-context
 
 [[ -z "$(git -C "$checkout_a" status --short)" &&
    -z "$(git -C "$checkout_b" status --short)" ]] ||
-    fail "candidate release checkouts are not clean"
+    fail "stable release checkouts are not clean"
 [[ -z "$(git -C "$checkout_a" symbolic-ref -q --short HEAD || true)" ]] ||
     fail "first release checkout is not detached"
 [[ "$(git -C "$checkout_b" symbolic-ref --short HEAD)" == \
@@ -125,9 +138,9 @@ for output_dir in "$output_a" "$output_b"; do
         sha256sum -c "$checksum_name"
     ) > "$fixture/checksum.stdout" ||
         fail "clean-checkout external checksum verification failed"
-    grep -Fqx 'version: 1.0.0-rc.1' "$output_dir/$report_name" ||
+    grep -Fqx 'version: 1.0.0' "$output_dir/$report_name" ||
         fail "release report version is inconsistent"
-    grep -Fqx 'prospective tag: v1.0.0-rc.1' \
+    grep -Fqx 'prospective tag: v1.0.0' \
         "$output_dir/$report_name" ||
         fail "release report prospective tag is inconsistent"
 done
@@ -138,13 +151,13 @@ cmp -s "$output_a/$checksum_name" "$output_b/$checksum_name" ||
     fail "two clean checkouts produced different checksum bytes"
 cmp -s "$output_a/$notes_name" "$output_b/$notes_name" ||
     fail "two clean checkouts produced different release-note bytes"
-cmp -s "$checkout_a/docs/releases/1.0.0-rc.1.md" \
+cmp -s "$checkout_a/docs/releases/1.0.0.md" \
     "$output_a/$notes_name" ||
     fail "generated release notes differ from their verified source"
 
 tar -tzf "$output_a/$archive_name" > "$fixture/archive.list"
 grep -v '/$' "$fixture/archive.list" |
-    sed 's|^termux-neo-1.0.0-rc.1/||' |
+    sed 's|^termux-neo-1.0.0/||' |
     LC_ALL=C sort > "$fixture/archive-files.list"
 {
     cat "$checkout_a/release/package-files.txt"
@@ -206,7 +219,7 @@ done <<'INVALID_VERSIONS'
 1.0.0+build.1
 INVALID_VERSIONS
 
-printf '%s\n%s\n' '1.0.0-rc.1' 'unexpected' \
+printf '%s\n%s\n' '1.0.0' 'unexpected' \
     > "$invalid_semver/VERSION"
 set +e
 PATH="$test_path" \
@@ -228,7 +241,7 @@ grep -Fq 'VERSION must contain exactly one line' \
 notes_mismatch="$fixture/notes-mismatch"
 git clone -q --no-hardlinks "$candidate" "$notes_mismatch"
 printf '\nProspective tag: `v9.9.9`\n' \
-    >> "$notes_mismatch/docs/releases/1.0.0-rc.1.md"
+    >> "$notes_mismatch/docs/releases/1.0.0.md"
 set +e
 PATH="$test_path" \
     bash "$notes_mismatch/scripts/package-release.sh" \
@@ -243,6 +256,28 @@ grep -Fq 'release notes metadata is inconsistent' \
     fail "release-note mismatch failure is inconsistent"
 [[ ! -e "$fixture/notes-mismatch-output" ]] ||
     fail "release-note mismatch created release output"
+
+# A stable VERSION cannot publish prerelease metadata. The builder derives the
+# allowed publication state and rejects a contradictory notes declaration.
+status_mismatch="$fixture/status-mismatch"
+git clone -q --no-hardlinks "$candidate" "$status_mismatch"
+sed -i \
+    's/^Publication status:.*/Publication status: release candidate; GitHub prerelease only./' \
+    "$status_mismatch/docs/releases/1.0.0.md"
+set +e
+PATH="$test_path" \
+    bash "$status_mismatch/scripts/package-release.sh" \
+        "$fixture/status-mismatch-output" \
+    > "$fixture/status-mismatch.stdout" 2> "$fixture/status-mismatch.stderr"
+status_mismatch_status=$?
+set -e
+(( status_mismatch_status != 0 )) ||
+    fail "stable release builder accepted prerelease publication metadata"
+grep -Fq 'release notes metadata is inconsistent' \
+    "$fixture/status-mismatch.stderr" ||
+    fail "stable publication mismatch failure is inconsistent"
+[[ ! -e "$fixture/status-mismatch-output" ]] ||
+    fail "stable publication mismatch created release output"
 
 # CLI output is checked independently even though production reads VERSION.
 cli_mismatch="$fixture/cli-mismatch"

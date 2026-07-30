@@ -18,18 +18,18 @@ also accepted:
 bash scripts/package-release.sh "$HOME/storage/downloads/Telegram"
 ```
 
-For version `1.0.0-rc.1`, the command creates:
+For version `1.0.0`, the command creates:
 
 ```text
-termux-neo-1.0.0-rc.1.tar.gz
-termux-neo-1.0.0-rc.1.tar.gz.sha256
-termux-neo-1.0.0-rc.1-release-notes.md
-termux-neo-1.0.0-rc.1-release-report.txt
+termux-neo-1.0.0.tar.gz
+termux-neo-1.0.0.tar.gz.sha256
+termux-neo-1.0.0-release-notes.md
+termux-neo-1.0.0-release-report.txt
 ```
 
 `VERSION` is the canonical release identity. The builder requires the CLI,
-archive/root name, prospective `v1.0.0-rc.1` tag, and
-`docs/releases/1.0.0-rc.1.md` metadata to agree before staging. See
+archive/root name, prospective `v1.0.0` tag, and
+`docs/releases/1.0.0.md` metadata to agree before staging. See
 [Versioning](versioning.md) for the complete fail-closed contract.
 
 The archive is reproducible: package layout, file order, timestamps, ownership
@@ -50,23 +50,32 @@ the output directory.
 
 ## Verify and install a downloaded archive
 
-Place the archive, release notes, and checksum file in the fixed download
-directory, then run:
+Download the archive, release notes, and checksum without GitHub
+authentication, then verify and install:
 
 ```bash
 cd "$HOME/storage/downloads/Telegram"
-sha256sum -c termux-neo-1.0.0-rc.1.tar.gz.sha256
+release_url="https://github.com/hosseinzamaninasab/termux-neo/releases/download/v1.0.0"
+curl --fail --location --remote-name \
+    "$release_url/termux-neo-1.0.0.tar.gz"
+curl --fail --location --remote-name \
+    "$release_url/termux-neo-1.0.0.tar.gz.sha256"
+curl --fail --location --remote-name \
+    "$release_url/termux-neo-1.0.0-release-notes.md"
+sha256sum -c termux-neo-1.0.0.tar.gz.sha256
 extract_parent="$(
     mktemp -d "$HOME/storage/downloads/Telegram/termux-neo-extract.XXXXXX"
 )"
 tar --extract --gzip --same-permissions \
-    --file termux-neo-1.0.0-rc.1.tar.gz \
+    --file termux-neo-1.0.0.tar.gz \
     --directory "$extract_parent"
-cd "$extract_parent/termux-neo-1.0.0-rc.1"
+cd "$extract_parent/termux-neo-1.0.0"
 sha256sum -c RELEASE_MANIFEST.sha256
 bash scripts/smoke-release.sh
 bash scripts/beta-field-test.sh --self-test
 bash install.sh
+termux-neo --version
+termux-neo
 ```
 
 The external checksum verifies archive integrity against the supplied digest;
@@ -89,7 +98,7 @@ deterministic no-color render. It reads the extracted tree and uses a private
 temporary home; it does not install or modify user settings.
 
 The packaged performance script checks repeated-render stability. The packaged
-beta script adds an isolated ten-scenario lifecycle and fallback matrix.
+field script adds an isolated ten-scenario lifecycle and fallback matrix.
 `--self-test` is portable; `--record` additionally requires an interactive real
 Termux terminal and produces redacted device evidence.
 
@@ -108,7 +117,7 @@ enabled by packaging or installation.
 ## Clean-checkout reproducibility
 
 The release-discipline regression creates two clean checkouts of the same
-candidate snapshot with different branch states. Both must produce identical
+stable snapshot with different branch states. Both must produce identical
 archive, release-note, checksum, and file-layout bytes. The builder reads no
 branch name, commit description, or tag when producing artifacts.
 

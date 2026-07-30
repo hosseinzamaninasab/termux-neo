@@ -27,6 +27,7 @@ docs/quality.md
 docs/release-artifacts.md
 docs/releases/0.9.0-beta.md
 docs/releases/1.0.0-rc.1.md
+docs/releases/1.0.0.md
 docs/security-policy.md
 docs/security.md
 docs/settings-schema-v1.md

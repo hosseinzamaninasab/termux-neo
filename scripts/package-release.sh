@@ -289,9 +289,14 @@ release_notes_require_field \
     "Prospective tag:" "Prospective tag: \`$release_tag\`"
 release_notes_require_field \
     "Archive:" "Archive: \`$archive_name\`"
+if [[ "$version" == *-* ]]; then
+    publication_status="release candidate; GitHub prerelease only."
+else
+    publication_status="stable public release; GitHub release."
+fi
 release_notes_require_field \
     "Publication status:" \
-    "Publication status: release candidate; GitHub prerelease only."
+    "Publication status: $publication_status"
 
 cli_version_output="$(
     bash "$SOURCE_ROOT/src/main.sh" --version 2>/dev/null

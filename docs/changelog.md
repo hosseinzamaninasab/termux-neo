@@ -1,7 +1,27 @@
 # Changelog
 
-This changelog records verified project checkpoints. Stable `v1.0.0` remains
-unreleased.
+This changelog records verified project checkpoints. Stable `v1.0.0` is the
+current public release.
+
+## 1.0.0 — 2026-07-30
+
+- Verified anonymous access to the public repository, the immutable
+  `v1.0.0-rc.1` prerelease, and all three candidate assets before the stable
+  transition.
+- Repeated the complete 26-test quality pipeline and ten-scenario physical
+  reference-device gate with zero critical, high-severity, or release-blocking
+  defects.
+- Advanced `VERSION`, CLI, archive, release notes, and annotated tag identity
+  together to `1.0.0`.
+- Published the stable GitHub release and byte-verified its archive, release
+  notes, and checksum from an anonymous context.
+- Verified no-root clean install, `termux-neo --version`, default render-once,
+  release-candidate update, same-version update, and owned-only uninstall from
+  the anonymous public artifact.
+- Preserved the `v1.0.0-rc.1` commit, annotated tag, prerelease, and asset
+  bytes unchanged.
+- Completed Feature Freeze. No runtime, CLI surface, settings, theme,
+  lifecycle, or support behavior changed during stable promotion.
 
 ## 1.0.0-rc.1 — 2026-07-29
 

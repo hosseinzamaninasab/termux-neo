@@ -2,8 +2,8 @@
 
 Termux Neo runs entirely as the current Termux user. It does not request root,
 open a network connection, install a daemon, or create a persistent child
-process. This document records the security boundary reviewed for the
-`1.0.0-rc.1` release-candidate checkpoint.
+process. This document records the security boundary reviewed for the stable
+`1.0.0` checkpoint.
 
 Potential vulnerabilities should be reported privately according to
 [Security Policy](security-policy.md).
@@ -134,9 +134,10 @@ No critical or release-blocking defect is knowingly left open by this review.
 Unverified environments and the absence of publisher signatures remain
 explicit limitations rather than implied guarantees.
 
-The public-beta defect counts are maintained in
-[beta-issues.md](beta-issues.md). Security fixes remain explicitly allowed
-while the [Feature Freeze](feature-freeze.md) is active.
+The release-gating defect counts are maintained in
+[beta-issues.md](beta-issues.md). The completed
+[Feature Freeze](feature-freeze.md) records the stable boundary; any security
+fix requires focused verification and a separately versioned release.
 
 The software is distributed under the [MIT License](../LICENSE). That license
 includes its own warranty and liability disclaimer; it does not expand the

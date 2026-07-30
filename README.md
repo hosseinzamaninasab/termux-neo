@@ -5,8 +5,8 @@ collects bounded device state, renders Dashboard, Status, and Prompt views, and
 exits. It does not require root, replace `PS1`, start a daemon, open a network
 connection, or run a refresh loop.
 
-Current release checkpoint: `1.0.0-rc.1`. The
-[Feature Freeze](docs/feature-freeze.md) is active.
+Current stable release: `1.0.0`. The
+[Feature Freeze](docs/feature-freeze.md) is complete.
 
 ## Preview
 
@@ -18,6 +18,34 @@ Both images are deterministic captures of the released renderer at 56 columns.
 They use documentation fixture values and are not additional device evidence.
 The exact evidence boundary is documented in
 [Compatibility](docs/compatibility.md).
+
+## Install the stable public release
+
+No root access is required. In Termux, download the three public release files,
+verify both published payloads, extract the archive, verify its internal
+manifest, and install:
+
+```bash
+cd "$HOME/storage/downloads"
+release_url="https://github.com/hosseinzamaninasab/termux-neo/releases/download/v1.0.0"
+curl --fail --location --remote-name \
+    "$release_url/termux-neo-1.0.0.tar.gz"
+curl --fail --location --remote-name \
+    "$release_url/termux-neo-1.0.0.tar.gz.sha256"
+curl --fail --location --remote-name \
+    "$release_url/termux-neo-1.0.0-release-notes.md"
+sha256sum -c termux-neo-1.0.0.tar.gz.sha256
+tar --extract --gzip --same-permissions \
+    --file termux-neo-1.0.0.tar.gz
+cd termux-neo-1.0.0
+sha256sum -c RELEASE_MANIFEST.sha256
+bash install.sh
+termux-neo --version
+termux-neo
+```
+
+The checksum detects changed bytes but is not a publisher signature. Use the
+versioned files from the project's public GitHub release page.
 
 ## Quick start
 
@@ -125,15 +153,15 @@ Canonical checkpoint references:
 | Current constraints | [Known limitations](docs/known-limitations.md) |
 | Verified milestones | [Changelog](docs/changelog.md) |
 | Semantic Versioning and release identity | [Versioning](docs/versioning.md) |
-| Current verified release notes | [1.0.0-rc.1 release notes](docs/releases/1.0.0-rc.1.md) |
+| Current verified release notes | [1.0.0 release notes](docs/releases/1.0.0.md) |
 | Artifact creation and verification | [Release artifacts](docs/release-artifacts.md) |
 | Canonical quality pipeline | [Quality](docs/quality.md) |
 | Performance and stability | [Performance](docs/performance.md) |
 | Measured reference-device values | [Performance baseline](docs/performance-baseline.md) |
-| Release-candidate field workflow | [Candidate testing](docs/beta-testing.md) |
+| Stable-release field workflow | [Stable verification](docs/beta-testing.md) |
 | Recorded physical beta evidence | [Beta field report](docs/beta-field-report.md) |
 | Release-gating defect ledger | [Issue ledger](docs/beta-issues.md) |
-| Active release rules | [Feature Freeze](docs/feature-freeze.md) |
+| Completed release rules | [Feature Freeze](docs/feature-freeze.md) |
 
 ## Development
 

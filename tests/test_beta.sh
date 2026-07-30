@@ -42,9 +42,9 @@ PATH="$probe_bin:$PATH" TMPDIR="$fixture" \
     fail "portable beta field matrix used a real external probe"
 (( ${#legacy_release_shebang} + 1 <= 128 )) ||
     fail "portable beta path exceeds the legacy Android shebang limit"
-grep -Fqx 'PASS: portable release candidate field matrix (10 scenarios)' \
+grep -Fqx 'PASS: portable stable release field matrix (10 scenarios)' \
     "$stdout_file" ||
-    fail "portable beta success contract is missing"
+    fail "portable stable success contract is missing"
 
 set +e
 TMPDIR="$long_parent" \
@@ -72,15 +72,15 @@ grep -Fq 'usage: bash scripts/beta-field-test.sh' \
     "$fixture/invalid.stderr" ||
     fail "invalid beta usage message is missing"
 
-[[ "$(cat VERSION)" == "1.0.0-rc.1" ]] ||
-    fail "release candidate version is inconsistent"
-grep -Fq 'Current release checkpoint: `1.0.0-rc.1`' README.md ||
-    fail "README release candidate checkpoint is missing"
+[[ "$(cat VERSION)" == "1.0.0" ]] ||
+    fail "stable release version is inconsistent"
+grep -Fq 'Current stable release: `1.0.0`' README.md ||
+    fail "README stable checkpoint is missing"
 grep -Fq '[docs/beta-testing.md](docs/beta-testing.md)' README.md ||
     fail "README beta testing link is missing"
 
-grep -Fqx 'ACTIVE — 1.0.0-rc.1' docs/feature-freeze.md ||
-    fail "feature freeze is not active"
+grep -Fqx 'COMPLETE — 1.0.0' docs/feature-freeze.md ||
+    fail "feature freeze is not complete"
 for allowed_change in \
     'a fix for a release-blocking defect' \
     'a security fix' \
@@ -130,4 +130,4 @@ grep -Fq 'did not mutate the user installation' \
         docs/beta-field-report.md ||
     fail "field report isolation boundary is missing"
 
-printf 'PASS: release candidate field matrix and feature freeze\n'
+printf 'PASS: stable field matrix and completed feature freeze\n'

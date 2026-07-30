@@ -23,21 +23,21 @@ the updater, package name, tag, and release notes.
 The current value is:
 
 ```text
-1.0.0-rc.1
+1.0.0
 ```
 
 ## Derived identities
 
 Every other release identity is derived from `VERSION`:
 
-| Consumer | Required value for `1.0.0-rc.1` |
+| Consumer | Required value for `1.0.0` |
 | --- | --- |
-| CLI | `termux-neo 1.0.0-rc.1` |
-| Package root | `termux-neo-1.0.0-rc.1/` |
-| Archive | `termux-neo-1.0.0-rc.1.tar.gz` |
-| Prospective Git tag | `v1.0.0-rc.1` |
-| Verified notes source | `docs/releases/1.0.0-rc.1.md` |
-| Published notes filename | `termux-neo-1.0.0-rc.1-release-notes.md` |
+| CLI | `termux-neo 1.0.0` |
+| Package root | `termux-neo-1.0.0/` |
+| Archive | `termux-neo-1.0.0.tar.gz` |
+| Prospective Git tag | `v1.0.0` |
+| Verified notes source | `docs/releases/1.0.0.md` |
+| Published notes filename | `termux-neo-1.0.0-release-notes.md` |
 
 The `v` prefix belongs only to a prospective Git tag. It is never written into
 `VERSION`.
@@ -66,16 +66,21 @@ beta, documentation, and packaging gates. The builder copies that exact file
 to the versioned output and includes both the archive and release-note digests
 in the external checksum file.
 
-A future version change must update `VERSION`, add the matching
+A version change must update `VERSION`, add the matching
 `docs/releases/VERSION.md` source, update the package layout, and pass the
 complete release-discipline test together. Editing only one consumer fails.
+
+Prerelease versions require the exact publication field
+`release candidate; GitHub prerelease only.` Stable versions require
+`stable public release; GitHub release.` The builder derives which value is
+valid from `VERSION`; release notes cannot select it independently.
 
 ## Publication boundary
 
 Packaging does not create a Git tag, GitHub release, or remote upload. The
-Task 31 release transaction may create the annotated `v1.0.0-rc.1` tag only
-after the complete quality, artifact, defect, and reference-device gates pass.
-The candidate commit and tag must be pushed together, and the GitHub release
-must remain a prerelease whose three public assets match the locally verified
-archive, release notes, and checksum byte-for-byte. Stable `v1.0.0` remains a
-separate release task.
+immutable annotated `v1.0.0-rc.1` tag and prerelease remain the verified
+candidate checkpoint. The stable transaction may create annotated `v1.0.0`
+only after the complete quality, artifact, defect, anonymous-public, and
+reference-device gates pass. The stable commit and tag must be pushed
+atomically, and the non-prerelease GitHub release's three public assets must
+match the locally verified archive, release notes, and checksum byte-for-byte.
